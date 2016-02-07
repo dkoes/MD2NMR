@@ -54,39 +54,39 @@ oxy_all_residues = []
 for ts in u.trajectory:
 	
 	for i in range(2, len(res)-2):
-		'''print '\n'
+		print '\n'
 		print '========================    Frame # is ' + str(ts.frame) + '    ========================'  + '\n'
 		print 'Residue #: \t' + str(res[i].id)
 		print 'i = \t' + str(i)
-		print '\n' '''
+		print '\n' 
 
 		oxy_res_distances = [] # O distances for THIS residue
 		nit_res_distances = [] # N distances for THIS residue
 
-		'''d0 = distance(res[ i ].N.pos, res[i].O.pos)
+		d0 = distance(res[ i ].N.pos, res[i].O.pos)
 		d1 = distance(res[i-1].O.pos, res[i].O.pos)
 		d2 = distance(res[i+1].N.pos, res[i].O.pos)
 		d3 = distance(res[i+1].O.pos, res[i].O.pos)
 		d4 = distance(res[i+2].N.pos, res[i].O.pos)
 		
 		oxy_test = np.array([d0,d1,d2,d3,d4])
-		oxy_all_residues.append(oxy_test)'''
+		oxy_all_residues.append(oxy_test)
 		
-		oxy_res_distances.append(distance(res[ i ].N.pos, res[i].O.pos))	# d0
+		oxy_res_distances.append(distance(res[ i ].H.pos, res[i].O.pos))	# d0
 		oxy_res_distances.append(distance(res[i-1].O.pos, res[i].O.pos))	# d1
-		oxy_res_distances.append(distance(res[i+1].N.pos, res[i].O.pos))	# d2
+		oxy_res_distances.append(distance(res[i+1].H.pos, res[i].O.pos))	# d2
 		oxy_res_distances.append(distance(res[i+1].O.pos, res[i].O.pos))	# d3
-		oxy_res_distances.append(distance(res[i+2].N.pos, res[i].O.pos))	# d4
+		oxy_res_distances.append(distance(res[i+2].H.pos, res[i].O.pos))	# d4
 		oxygen_distances.append(oxy_res_distances)
 
 		nit_res_distances.append(distance(res[ i ].O.pos, res[i].N.pos))	# d5
-		nit_res_distances.append(distance(res[i-1].N.pos, res[i].N.pos))	# d6
+		nit_res_distances.append(distance(res[i-1].H.pos, res[i].N.pos))	# d6
 		nit_res_distances.append(distance(res[i-2].O.pos, res[i].N.pos))	# d7
 		nit_res_distances.append(distance(res[i-1].O.pos, res[i].N.pos))	# d8
-		nit_res_distances.append(distance(res[i+1].N.pos, res[i].N.pos))	# d9
+		nit_res_distances.append(distance(res[i+1].H.pos, res[i].N.pos))	# d9
 		nitrog_distances.append(nit_res_distances)
 		
-		'''print 'res[i].N.pos:\t' + str(res[i].N)
+		print 'res[i].N.pos:\t' + str(res[i].N)
 		print 'res[i-1].O.pos\t' + str(res[i-1].O)
 		print 'res[i+1].N.pos\t' + str(res[i+1].N)
 		print 'res[i+1].O.pos\t' + str(res[i+1].O)
@@ -102,7 +102,7 @@ for ts in u.trajectory:
 		print 'res[i+1].N.pos\t' + str(res[i+1].N)
 		print '\n'
 		print nit_res_distances
-		print '\n\n' '''
+		print '\n\n' 
 
 result = ''
 all_ox_dist = []
@@ -150,10 +150,8 @@ for i in range(2, len(res)-2):
 print "Length of oxygen_distances: \t" + str(len(oxy_all_residues))
 print "Length of nitrog_distances: \t" + str(len(nitrog_distances))
 print '\n\n' 
-
 for o in ox:
 	print 'O: ' + str(o)
-
 for a, b in zip(oxygen_distances, nitrog_distances):
 	print 'a:\t' + str(a)
 	print 'b:\t' + str(b)'''
