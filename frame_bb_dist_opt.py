@@ -48,15 +48,10 @@ for ts in u.trajectory:
 			file_name_O = 'DUMP.O.' + str(i) + '.txt'
 			file_name_N = 'DUMP.N.' + str(i) + '.txt'
 
-			# New calculations
-			d0 = str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos))) # Same as d5
-			d1 = str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].O.pos)))
+			# Calculations that will be used more than once
+			d0 =  str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos))) # Same as d5
 			d2 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos))) # Next res d8
 			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos))) # Next res d1
-			d4 = str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos)))
-			d6 = str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].N.pos))) 
-			d7 = str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos)))
-			d8 = str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].N.pos))) 
 			d9 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos))) # Next res d6
 			
 			# Storing distances for use in next residue
@@ -64,35 +59,28 @@ for ts in u.trajectory:
 			next_res_dist.append(d3) # d1
 			next_res_dist.append(d9) # d6
 
+			# Compute calculations as distances are written to files
 			with open(file_name_O, "a") as file_O:
-				file_O.write('O|' + str(ts.frame) + '|' + d0 + '|' + d1 + '|' + d2 + '|' + d3 + '|' + d4 + '\n')
+				file_O.write('O|' + str(ts.frame) + '|' + d0 + '|' + str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].O.pos))) + '|' + d2 + '|' + d3 + '|' + str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))) + '\n')
 		
 			with open(file_name_N, "a") as file_N:
-				file_N.write('N|' + str(ts.frame) + '|' + d0 + '|' + d6 + '|' + d7 + '|' + d8 + '|' + d9 + '\n')
+				file_N.write('N|' + str(ts.frame) + '|' + d0 + '|' + str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].N.pos))) + '|' + str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))) + '|' + str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].N.pos))) + '|' + d9 + '\n')
 		else:
 			file_name_O = 'DUMP.O.' + str(i) + '.txt'
 			file_name_N = 'DUMP.N.' + str(i) + '.txt'
 
 			# New calculations
 			d0 = str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos)))
-			d1 = next_res_dist[1]
-			d2 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos)))
-			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos)))
-			d4 = str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos)))
-			d6 = next_res_dist[2]
-			d7 = str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos)))
-			d8 = next_res_dist[0]
-			d9 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos)))
-			
-			# Storing THIS residue's distances for use in next residue
+
+			# Compute calculations as distances are written to files
+			with open(file_name_O, "a") as file_O:
+				file_O.write('O|' + str(ts.frame) + '|' + d0 + '|' + next_res_dist[1] + '|' + str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos))) + '|' + str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos))) + '|' + str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))) + '\n')
+		
+			with open(file_name_N, "a") as file_N:
+				file_N.write('N|' + str(ts.frame) + '|' + d0 + '|' + next_res_dist[2] + '|' + str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))) + '|' + next_res_dist[0] + '|' + str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos))) + '\n')
+
 			next_res_dist[0] = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos)))
 			next_res_dist[1] = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos)))
 			next_res_dist[2] = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos)))
-
-			with open(file_name_O, "a") as file_O:
-				file_O.write('O|' + str(ts.frame) + '|' + d0 + '|' + d1 + '|' + d2 + '|' + d3 + '|' + d4 + '\n')
-		
-			with open(file_name_N, "a") as file_N:
-				file_N.write('N|' + str(ts.frame) + '|' + d0 + '|' + d6 + '|' + d7 + '|' + d8 + '|' + d9 + '\n')
 
 print "Program time: " + str("{0:.3f}".format(time.time() - start_time)) + " seconds."
