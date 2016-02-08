@@ -45,8 +45,8 @@ for ts in u.trajectory:
 	for i in range(2, len(res)-2):
 		if i == 2:
 			#Print into the open files
-			file_name_O = 'DUMP.O.' + str(i) + '.txt'
-			file_name_N = 'DUMP.N.' + str(i) + '.txt'
+			file_name_O = 'DUMP.O.' + str(i+2) + '.txt'
+			file_name_N = 'DUMP.N.' + str(i+2) + '.txt'
 
 			# Calculations that will be used more than once
 			d0 =  str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos))) # Same as d5
@@ -66,8 +66,8 @@ for ts in u.trajectory:
 			with open(file_name_N, "a") as file_N:
 				file_N.write('N|' + str(ts.frame) + '|' + d0 + '|' + str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].N.pos))) + '|' + str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))) + '|' + str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].N.pos))) + '|' + d9 + '\n')
 		else:
-			file_name_O = 'DUMP.O.' + str(i) + '.txt'
-			file_name_N = 'DUMP.N.' + str(i) + '.txt'
+			file_name_O = 'DUMP.O.' + str(i+2) + '.txt'
+			file_name_N = 'DUMP.N.' + str(i+2) + '.txt'
 
 			# New calculations
 			d0 = str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos)))

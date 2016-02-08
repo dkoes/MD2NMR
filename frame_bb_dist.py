@@ -90,7 +90,7 @@ all_ox_dist = []
 all_ni_dist = []
 
 for j in range (0, len(range(2,len(res)-2))):
-	frame_num = 1
+	frame_num = 0
 	result = ''
 	dist_range = range(j, len(oxygen_distances), len(range(2,len(res)-2)))
 	res_range = range(2, len(res)-2)	
@@ -102,13 +102,13 @@ for j in range (0, len(range(2,len(res)-2))):
 		result += '\n'
 	all_ox_dist.append(result)
 
-for i in range(0, len(all_ox_dist)):
-	file_name = 'DUMP.O.' + str(i+2) + '.txt'
+for i in range(-1, len(all_ox_dist)):
+	file_name = 'DUMP.O.' + str(i+4) + '.txt'
 	with open(file_name, 'w') as f:
 		f.write(all_ox_dist[i])
 
 for j in range (0, len(range(2,len(res)-2))):
-	frame_num = 1
+	frame_num = 0
 	result = ''
 	dist_range = range(j, len(nitrog_distances), len(range(2,len(res)-2)))
 	res_range = range(2, len(res)-2)	
@@ -120,8 +120,8 @@ for j in range (0, len(range(2,len(res)-2))):
 		result += '\n'
 	all_ni_dist.append(result)
 
-for i in range(0, len(all_ni_dist)):
-	file_name = 'DUMP.N.' + str(i+2) + '.txt'
+for i in range(-1, len(all_ni_dist)):
+	file_name = 'DUMP.N.' + str(i+4) + '.txt'
 	with open(file_name, 'w') as f:
 		f.write(all_ni_dist[i])
 
