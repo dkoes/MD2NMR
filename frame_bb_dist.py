@@ -40,50 +40,76 @@ def distance(atom1, atom2):
 	z = atom1[2] - atom2[2]
 	return math.sqrt((x * x) + (y * y) + (z * z))
 
+'''# Open all files at the beginning
+for i in range(2, len(res)-2):
+	file_name_O = 'DUMP.O.' + str(i+2) + '.txt'
+	f_O = open(file_name_O,'w')
+	open_O_files.append(f_O)
+	file_name_N = 'DUMP.N.' + str(i+2) + '.txt'
+	f_N = open(file_name_N,'w')
+	open_N_files.append(f_N)'''
+
+next_res_dist = []
+
 # Iterates through every residue in each frame, computing the distance between N's and O's
 for ts in u.trajectory:
 	
 	for i in range(2, len(res)-2):
-		'''print '\n'
-		print '========================    Frame # is ' + str(ts.frame) + '    ========================'  + '\n'
-		print 'Residue #: \t' + str(res[i].id)
-		print 'i = \t' + str(i)
-		print '\n' '''
+		if i == 2:
+			# Calculations that will be used more than once
+			d0 = str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos))) # Same as d5
+			d2 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos))) # Next res d8
+			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos))) # Next res d1
+			d9 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos))) # Next res d6
+			
+			# Storing distances for use in next residue
+			next_res_dist.append(d2) # d8
+			next_res_dist.append(d3) # d1
+			next_res_dist.append(d9) # d6
 
-		oxy_res_distances = [] # O distances for THIS residue
-		nit_res_distances = [] # N distances for THIS residue
-		
-		oxy_res_distances.append(distance(res[ i ].N.pos, res[i].O.pos))	# d0
-		oxy_res_distances.append(distance(res[i-1].O.pos, res[i].O.pos))	# d1
-		oxy_res_distances.append(distance(res[i+1].N.pos, res[i].O.pos))	# d2
-		oxy_res_distances.append(distance(res[i+1].O.pos, res[i].O.pos))	# d3
-		oxy_res_distances.append(distance(res[i+2].N.pos, res[i].O.pos))	# d4
-		oxygen_distances.append(oxy_res_distances)
+			oxy_res_distances = [] # O distances for THIS residue
+			nit_res_distances = [] # N distances for THIS residue
 
-		nit_res_distances.append(distance(res[ i ].O.pos, res[i].N.pos))	# d5
-		nit_res_distances.append(distance(res[i-1].N.pos, res[i].N.pos))	# d6
-		nit_res_distances.append(distance(res[i-2].O.pos, res[i].N.pos))	# d7
-		nit_res_distances.append(distance(res[i-1].O.pos, res[i].N.pos))	# d8
-		nit_res_distances.append(distance(res[i+1].N.pos, res[i].N.pos))	# d9
-		nitrog_distances.append(nit_res_distances)
-		
-		'''print 'res[i].N.pos:\t' + str(res[i].N)
-		print 'res[i-1].O.pos\t' + str(res[i-1].O)
-		print 'res[i+1].N.pos\t' + str(res[i+1].N)
-		print 'res[i+1].O.pos\t' + str(res[i+1].O)
-		print 'res[i+2].N.pos\t' + str(res[i+2].N)
-		print '\n'
-		print oxy_res_distances
-		print '\n\n'
-		
-		print 'res[i].O.pos\t' + str(res[i].O)
-		print 'res[i-1].N.pos\t' + str(res[i-1].N)
-		print 'res[i-2].O.pos\t' + str(res[i-2].O)
-		print 'res[i-1].O.pos\t' + str(res[i-1].O)
-		print 'res[i+1].N.pos\t' + str(res[i+1].N)
-		print '\n'
-		print nit_res_distances
-		print '\n\n' '''
+			oxy_res_distances.append(d0)	# d0
+			oxy_res_distances.append(str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].O.pos))))	# d1
+			oxy_res_distances.append(d2)	# d2
+			oxy_res_distances.append(d3)	# d3
+			oxy_res_distances.append(str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))))	# d4
+			oxygen_distances.append(oxy_res_distances)
+
+			nit_res_distances.append(d0)	# d5
+			nit_res_distances.append(str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].N.pos))))	# d6
+			nit_res_distances.append(str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))))	# d7
+			nit_res_distances.append(str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].N.pos))))	# d8
+			nit_res_distances.append(d9)	# d9
+			nitrog_distances.append(nit_res_distances)
+		else:
+			# New calculations
+			d0 = str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos)))
+			d2 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos))) # Next res d8
+			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos))) # Next res d1
+			d9 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos))) # Next res d6 
+
+			oxy_res_distances = [] # O distances for THIS residue
+			nit_res_distances = [] # N distances for THIS residue
+
+			oxy_res_distances.append(d0)	# d0
+			oxy_res_distances.append(next_res_dist[1])	# d1
+			oxy_res_distances.append(d2)	# d2
+			oxy_res_distances.append(d3)	# d3
+			oxy_res_distances.append(str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))))	# d4
+			oxygen_distances.append(oxy_res_distances)
+
+			nit_res_distances.append(d0)	# d5
+			nit_res_distances.append(next_res_dist[2])	# d6
+			nit_res_distances.append(str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))))	# d7
+			nit_res_distances.append(next_res_dist[0])	# d8
+			nit_res_distances.append(d9)	# d9
+			nitrog_distances.append(nit_res_distances)
+
+			next_res_dist[0] = d2
+			next_res_dist[1] = d3
+			next_res_dist[2] = d9
 
 result = ''
 all_ox_dist = []
@@ -98,11 +124,11 @@ for j in range (0, len(range(2,len(res)-2))):
 		result += 'O|' + str(frame_num)
 		frame_num += 1
 		for dist in oxygen_distances[i]:
-			result += '|' + str("{0:.3f}".format(dist))
+			result += '|' + dist
 		result += '\n'
 	all_ox_dist.append(result)
 
-for i in range(-1, len(all_ox_dist)):
+for i in range(0, len(all_ox_dist)):
 	file_name = 'DUMP.O.' + str(i+4) + '.txt'
 	with open(file_name, 'w') as f:
 		f.write(all_ox_dist[i])
@@ -113,16 +139,40 @@ for j in range (0, len(range(2,len(res)-2))):
 	dist_range = range(j, len(nitrog_distances), len(range(2,len(res)-2)))
 	res_range = range(2, len(res)-2)	
 	for i in dist_range:
-		result += 'O|' + str(frame_num)
+		result += 'N|' + str(frame_num)
 		frame_num += 1
 		for dist in nitrog_distances[i]:
-			result += '|' + str("{0:.3f}".format(dist))
+			result += '|' + dist
 		result += '\n'
 	all_ni_dist.append(result)
 
-for i in range(-1, len(all_ni_dist)):
+for i in range(0, len(all_ni_dist)):
 	file_name = 'DUMP.N.' + str(i+4) + '.txt'
 	with open(file_name, 'w') as f:
 		f.write(all_ni_dist[i])
 
 print "Program time: " + str("{0:.3f}".format(time.time() - start_time)) + " seconds."
+
+'''print '\n'
+			print '========================    Frame # is ' + str(ts.frame) + '    ========================'  + '\n'
+			print 'Residue #: \t' + str(res[i].id)
+			print 'i = \t' + str(i)
+			print '\n' 
+			
+			print 'res[i].N.pos:\t' + str(res[i].N)
+			print 'res[i-1].O.pos\t' + str(res[i-1].O)
+			print 'res[i+1].N.pos\t' + str(res[i+1].N)
+			print 'res[i+1].O.pos\t' + str(res[i+1].O)
+			print 'res[i+2].N.pos\t' + str(res[i+2].N)
+			print '\n'
+			print oxy_res_distances
+			print '\n\n'
+		
+			print 'res[i].O.pos\t' + str(res[i].O)
+			print 'res[i-1].N.pos\t' + str(res[i-1].N)
+			print 'res[i-2].O.pos\t' + str(res[i-2].O)
+			print 'res[i-1].O.pos\t' + str(res[i-1].O)
+			print 'res[i+1].N.pos\t' + str(res[i+1].N)
+			print '\n'
+			print nit_res_distances
+			print '\n\n' '''
