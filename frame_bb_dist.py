@@ -152,27 +152,3 @@ for i in range(0, len(all_ni_dist)):
 		f.write(all_ni_dist[i])
 
 print "Program time: " + str("{0:.3f}".format(time.time() - start_time)) + " seconds."
-
-'''print '\n'
-			print '========================    Frame # is ' + str(ts.frame) + '    ========================'  + '\n'
-			print 'Residue #: \t' + str(res[i].id)
-			print 'i = \t' + str(i)
-			print '\n' 
-			
-			print 'res[i].N.pos:\t' + str(res[i].N)
-			print 'res[i-1].O.pos\t' + str(res[i-1].O)
-			print 'res[i+1].N.pos\t' + str(res[i+1].N)
-			print 'res[i+1].O.pos\t' + str(res[i+1].O)
-			print 'res[i+2].N.pos\t' + str(res[i+2].N)
-			print '\n'
-			print oxy_res_distances
-			print '\n\n'
-		
-			print 'res[i].O.pos\t' + str(res[i].O)
-			print 'res[i-1].N.pos\t' + str(res[i-1].N)
-			print 'res[i-2].O.pos\t' + str(res[i-2].O)
-			print 'res[i-1].O.pos\t' + str(res[i-1].O)
-			print 'res[i+1].N.pos\t' + str(res[i+1].N)
-			print '\n'
-			print nit_res_distances
-			print '\n\n' '''
