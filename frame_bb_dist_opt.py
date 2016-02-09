@@ -39,17 +39,24 @@ def distance(atom1, atom2):
 	return math.sqrt((x * x) + (y * y) + (z * z))
 
 next_res_dist = []
+open_O_files = []
+open_N_files = []
+
+# Open all files at the beginning
+for i in range(2, len(res)-2):
+	file_name_O = 'DUMP.O.' + str(i+2) + '.txt'
+	f_O = open(file_name_O,'w')
+	open_O_files.append(f_O)
+	file_name_N = 'DUMP.N.' + str(i+2) + '.txt'
+	f_N = open(file_name_N,'w')
+	open_N_files.append(f_N)
 
 # Iterates through every residue in each frame, computing the distance between N's and O's
 for ts in u.trajectory:
-	for i in range(2, len(res)-2):
+	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
 		if i == 2:
-			#Print into the open files
-			file_name_O = 'DUMP.O.' + str(i+2) + '.txt'
-			file_name_N = 'DUMP.N.' + str(i+2) + '.txt'
-
 			# Calculations that will be used more than once
-			d0 =  str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos))) # Same as d5
+			d0 = str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos))) # Same as d5
 			d2 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos))) # Next res d8
 			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos))) # Next res d1
 			d9 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos))) # Next res d6
@@ -60,27 +67,32 @@ for ts in u.trajectory:
 			next_res_dist.append(d9) # d6
 
 			# Compute calculations as distances are written to files
-			with open(file_name_O, "a") as file_O:
-				file_O.write('O|' + str(ts.frame) + '|' + d0 + '|' + str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].O.pos))) + '|' + d2 + '|' + d3 + '|' + str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))) + '\n')
+			open_O_files[f].write('O|' + str(ts.frame) + '|' + d0 + '|' + \
+						 str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].O.pos))) + '|' + \
+						 d2 + '|' + d3 + '|' + str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))) + '\n')
 		
-			with open(file_name_N, "a") as file_N:
-				file_N.write('N|' + str(ts.frame) + '|' + d0 + '|' + str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].N.pos))) + '|' + str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))) + '|' + str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].N.pos))) + '|' + d9 + '\n')
+			open_N_files[f].write('N|' + str(ts.frame) + '|' + d0 + '|' + \
+						 str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].N.pos))) + '|' + \
+						 str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))) + '|' + \
+						 str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].N.pos))) + '|' + d9 + '\n')
 		else:
-			file_name_O = 'DUMP.O.' + str(i+2) + '.txt'
-			file_name_N = 'DUMP.N.' + str(i+2) + '.txt'
-
 			# New calculations
 			d0 = str("{0:.3f}".format(distance(res[ i ].N.pos, res[i].O.pos)))
+			d2 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos))) # Next res d8
+			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos))) # Next res d1
+			d9 = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos))) # Next res d6 
 
 			# Compute calculations as distances are written to files
-			with open(file_name_O, "a") as file_O:
-				file_O.write('O|' + str(ts.frame) + '|' + d0 + '|' + next_res_dist[1] + '|' + str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos))) + '|' + str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos))) + '|' + str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))) + '\n')
+			open_O_files[f].write('O|' + str(ts.frame) + '|' + d0 + '|' + next_res_dist[1] + '|' + \
+						 d2 + '|' + d3 + '|' + \
+						 str("{0:.3f}".format(distance(res[i+2].N.pos, res[i].O.pos))) + '\n')
 		
-			with open(file_name_N, "a") as file_N:
-				file_N.write('N|' + str(ts.frame) + '|' + d0 + '|' + next_res_dist[2] + '|' + str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))) + '|' + next_res_dist[0] + '|' + str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos))) + '\n')
+			open_N_files[f].write('N|' + str(ts.frame) + '|' + d0 + '|' + next_res_dist[2] + '|' + \
+						 str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].N.pos))) + '|' + \
+						 next_res_dist[0] + '|' + d9 + '\n')
 
-			next_res_dist[0] = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].O.pos)))
-			next_res_dist[1] = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos)))
-			next_res_dist[2] = str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].N.pos)))
+			next_res_dist[0] = d2
+			next_res_dist[1] = d3
+			next_res_dist[2] = d9
 
 print "Program time: " + str("{0:.3f}".format(time.time() - start_time)) + " seconds."
