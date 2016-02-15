@@ -49,7 +49,8 @@ atom_reference = {
 "CGLN": "C", "CGLY": "C", "CGLU": "C", "CHSD": "C", "CHSE": "C", "CHSP": "C", "CILE": "C", "CLEU": "C", 
 "CLYS": "C", "CMET": "C", "CPHE": "C", "CPRO": "C", "CSER": "C", "CTHR": "C", "CTRP": "C","CTYR": "C", "CVAL": "C"
 }
-
+#for key, value in atom_reference.iteritems():
+	#print key, value
 # Computes distances function sqrt( (x2 - x1)^2 + (y2-y1)^2 + (z2-z1)^2 )
 def distance(atom1, atom2):
 	x = atom1[0] - atom2[0]
@@ -79,17 +80,21 @@ for i in range(2, len(res)-2):
 for ts in u.trajectory:
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
 		if i == 2 and res[i].name not in "PRO":
-			# Grab all atoms within 5.0 A of target
-			# print "== FRAME NUMBER: " + str(ts.frame) + " =="
-			# print str(res[i].H.number + 1), res[i].H
-			# cloud = u.select_atoms("around 5.0 atom " + "SYSTEM" + " " + str(res[i].id) + " H")
-			# print "Length of cloud atoms: \t" + str(len(cloud))
-			# for at in cloud:
-				# print "Atom name: \t\t" + at.name
-				# if at.name in atom_reference.keys():
-					# st += atom_reference[at.name]
-					# print st
-
+			#Grab all atoms within 5.0 A of target
+			print "== FRAME NUMBER: " + str(ts.frame) + " =="
+			print str(res[i].H.number + 1), res[i].H
+			cloud = u.select_atoms("around 5.0 atom " + "SYSTEM" + " " + str(res[i].id) + " H")
+			print "Length of cloud atoms: \t" + str(len(cloud))
+			for at in cloud:
+				print "Atom name: \t\t" + at.name
+				if at.name in atom_reference.keys():
+					print "atom found in dictionary"
+				##if at.name in atom_reference.keys():
+					##print "\t" + atom_reference[at.name]
+					##st += atom_reference[at.name]
+					##print "Check this out" + st
+			
+					
 			# d3 becomes d1 in the next residue
 			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos)))
 			next_res_dist.append(d3) 
