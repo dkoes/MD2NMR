@@ -25,8 +25,30 @@ u = MDAnalysis.Universe(top_name, traj_name)
 prot = u.select_atoms("protein")
 res = prot.atoms.residues
 
-# Set print options to only display 3 decimal places
-np.set_printoptions(threshold=np.inf,precision=3)
+# Dictionary that maps atom names to groups
+atom_reference = {
+"NALA": "N", "NARG": "N", "NASN": "N", "NASP": "N", "NCYS": "N", "NGLN": "N", "NGLY": "N", "NGLU": "N",
+"NHSD": "N", "NHSE": "N", "NHSP": "N", "NILE": "N", "NLEU": "N", "NLYS": "N", "NMET": "N", "NPHE": "N",
+"NPRO": "N", "NSER": "N", "NTHR": "N", "NTRP": "N", "NTYR": "N", "NVAL": "N",
+"OALA": "O", "OARG": "O", "OASN": "O", "OASP": "O", "OCYS": "O", "OGLN": "O", "OGLY": "O", "OGLU": "O",
+"OHSD": "O", "OHSE": "O", "OHSP": "O", "OILE": "O", "OLEU": "O", "OLYS": "O", "OMET": "O", "OPHE": "O",
+"OPRO": "O", "OSER": "O", "OTHR": "O", "OTRP": "O", "OTYR": "O", "OVAL": "O", "OD1ASN": "O", "OE1GLN": "O",
+"OH2TIP3": "W", "CD1PHE": "R", "CD1TRP": "R", "CD1TYR": "R", "CD2HSD": "R", "CD2HSE": "R", "CD2HSP": "R",
+"CD2PHE": "R", "CD2TRP": "R", "CD2TYR": "R", "CE1HSD": "R", "CE1HSE": "R", "CE1HSP": "R",
+"CE1PHE": "R", "CE1TYR": "R", "CE2PHE": "R", "CE2TRP": "R", "CE2TYR": "R", "CE3TRP": "R",
+"CGHSD": "R", "CGHSE": "R", "CGHSP": "R", "CGPHE": "R", "CGTRP": "R", "CGTYR": "R",
+"CH2TRP": "R", "CZ2TRP": "R", "CZ3TRP": "R", "CZPHE": "R", "CZTYR": "R", "ND1HSD": "R",
+"ND1HSE": "R", "ND1HSP": "R", "NE1TRP": "R", "NE2HSD": "R", "NE2HSE": "R", "NE2HSP": "R",	
+"OG1THR": "L", "OGSER":  "L", "OHTYR":  "L", "OD2ASPH": "L", "OE2GLUH": "L", "ND2ASN": "D", "NE2GLN": "D", 
+"SDMET":  "S", "SGCYS":  "S", "OD1ASP": "A", "OD2ASP": "A", "OE1GLU": "A", "OE2GLU": "A", "OT1ALA": "A", 
+"OT1ARG": "A", "OT1ASN": "A", "OT1ASP": "A", "OT1CYS": "A", "OT1GLN": "A", "OT1GLY": "A", "OT1GLU": "A", 
+"OT1HSD": "A", "OT1HSE": "A", "OT1HSP": "A", "OT1ILE": "A", "OT1LEU": "A",  "OT1LYS": "A", "OT1MET": "A", 
+"OT1PHE": "A", "OT1PRO": "A", "OT1SER": "A", "OT1THR": "A", "OT1TRP": "A", "OT1TYR": "A", "OT1VAL": "A",
+"NZLYS": "B", "NTALA": "B", "NEARG": "G", "NH1ARG": "G", "NH2ARG": "G", "SODSOD": "P", "CLACLA": "M",
+"Z": "Z", "OD1ASPH": "U", "OE1GLUH": "U", "CALA": "C", "CARG": "C", "CASN": "C", "CASP": "C", "CCYS": "C", 
+"CGLN": "C", "CGLY": "C", "CGLU": "C", "CHSD": "C", "CHSE": "C", "CHSP": "C", "CILE": "C", "CLEU": "C", 
+"CLYS": "C", "CMET": "C", "CPHE": "C", "CPRO": "C", "CSER": "C", "CTHR": "C", "CTRP": "C","CTYR": "C", "CVAL": "C"
+}
 
 # Computes distances function sqrt( (x2 - x1)^2 + (y2-y1)^2 + (z2-z1)^2 )
 def distance(atom1, atom2):
@@ -53,10 +75,21 @@ for i in range(2, len(res)-2):
 	open_O_files.append(f_O)
 	open_N_files.append(f_N)
 
-# Iterates through every residue in each frame, computing the distance between N's and O's
+# Iterates through every residue in each frame, computing and writing the distance between N's and O's
 for ts in u.trajectory:
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
 		if i == 2 and res[i].name not in "PRO":
+			# Grab all atoms within 5.0 A of target
+			# print "== FRAME NUMBER: " + str(ts.frame) + " =="
+			# print str(res[i].H.number + 1), res[i].H
+			# cloud = u.select_atoms("around 5.0 atom " + "SYSTEM" + " " + str(res[i].id) + " H")
+			# print "Length of cloud atoms: \t" + str(len(cloud))
+			# for at in cloud:
+				# print "Atom name: \t\t" + at.name
+				# if at.name in atom_reference.keys():
+					# st += atom_reference[at.name]
+					# print st
+
 			# d3 becomes d1 in the next residue
 			d3 = str("{0:.3f}".format(distance(res[i+1].O.pos, res[i].O.pos)))
 			next_res_dist.append(d3) 
