@@ -194,17 +194,17 @@ for ts in u.trajectory:
 
 				# Write distances to output as they are calculated
 				open_O_files[f].write('O|' + str(ts.frame) + '|' + \
-							 str("{0:.3f}".format(distance(res[ o ].N.pos, res[o].O.pos))) + '|' + \
-							 str("{0:.3f}".format(distance(res[o-1].O.pos, res[o].O.pos))) + '|' + \
-							 str("{0:.3f}".format(distance(res[o+1].N.pos, res[o].O.pos))) + '|' + \
-							 d3 + '|' + str("{0:.3f}".format(distance(res[o+2].N.pos, res[o].O.pos))) + '\n')
+					str("{0:.3f}".format(distance(res[ o ].N.pos, res[o].O.pos))) + '|' + \
+					str("{0:.3f}".format(distance(res[o-1].O.pos, res[o].O.pos))) + '|' + \
+					str("{0:.3f}".format(distance(res[o+1].N.pos, res[o].O.pos))) + '|' + \
+					d3 + '|' + str("{0:.3f}".format(distance(res[o+2].N.pos, res[o].O.pos))) + '\n')
 		
 			open_N_files[f].write('N|' + str(ts.frame) + '|' + \
-						 str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].H.pos))) + '|' + \
-						 str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].H.pos))) + '|' + \
-						 str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].H.pos))) + '|' + \
-						 str("{0:.3f}".format(distance(res[ i ].O.pos, res[i].H.pos))) + '|' + \
-						 str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].H.pos))) + '\n')
+				str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].H.pos))) + '|' + \
+				str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].H.pos))) + '|' + \
+				str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].H.pos))) + '|' + \
+				str("{0:.3f}".format(distance(res[ i ].O.pos, res[i].H.pos))) + '|' + \
+				str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].H.pos))) + '\n')
 		elif i > 2 and res[i].name not in "PRO":
 			# Intentionally offset the oxygen output
 			o = i - 1
@@ -214,17 +214,17 @@ for ts in u.trajectory:
 
 				# Write distances to output as they are calculated
 				open_O_files[f].write('O|' + str(ts.frame) + '|' + \
-							 str("{0:.3f}".format(distance(res[ o ].N.pos, res[o].O.pos))) + '|' + next_res_dist[0] + '|' + \
-							 str("{0:.3f}".format(distance(res[o+1].N.pos, res[o].O.pos))) + '|' + d3 + '|' + \
-							 str("{0:.3f}".format(distance(res[o+2].N.pos, res[o].O.pos))) + '\n')
+					str("{0:.3f}".format(distance(res[ o ].N.pos, res[o].O.pos))) + '|' + next_res_dist[0] + '|' + \
+					str("{0:.3f}".format(distance(res[o+1].N.pos, res[o].O.pos))) + '|' + d3 + '|' + \
+					str("{0:.3f}".format(distance(res[o+2].N.pos, res[o].O.pos))) + '\n')
 				next_res_dist[0] = d3
 		
 			open_N_files[f].write('N|' + str(ts.frame) + '|' + \
-						 str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].H.pos))) + '|' + \
-						 str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].H.pos))) + '|' + \
-						 str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].H.pos))) + '|' + \
-						 str("{0:.3f}".format(distance(res[ i ].O.pos, res[i].H.pos))) + '|' + 
-						 str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].H.pos))) + '\n')
+				str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].H.pos))) + '|' + \
+				str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].H.pos))) + '|' + \
+				str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].H.pos))) + '|' + \
+				str("{0:.3f}".format(distance(res[ i ].O.pos, res[i].H.pos))) + '|' + 
+				str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].H.pos))) + '\n')
 		else:
 			continue
 
