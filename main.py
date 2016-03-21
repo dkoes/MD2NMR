@@ -115,7 +115,6 @@ def vangle(atom, res):
 def find_closest_atom(cloud, target_atom):
 	minC = 10000.0
 	minO = 10000.0
-	minR = 10000.0
 	
 	# Organize carbon and oxygen atom types
 	carbons = []
