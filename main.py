@@ -87,15 +87,15 @@ def distance(atom1, atom2):
 	z = atom1[2] - atom2[2]
 	return math.sqrt((x * x) + (y * y) + (z * z))
 
-def vangle(atom, res):
-    u = res.N.pos - res.O.pos
-    v = atom.pos - res.O.pos
+def vangle(x, v):
+    # u = res.N.pos - res.H.pos
+    # v = atom.pos - res.H.pos
     
     theta = 0.0
     
-    dot = u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
+    dot = x[0] * v[0] + x[1] * v[1] + x[2] * v[2]
     
-    udx = math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2])
+    udx = math.sqrt(x[0] * x[0] + x[1] * x[1] + x[2] * x[2])
     vdx = math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
 
     udxvdx = dot/(udx*vdx);
@@ -215,6 +215,7 @@ for ts in u.trajectory:
 		if i == 2 and res[i].name not in "PRO":
 			print "\n============== FRAME NUMBER: " + str(ts.frame) + " =============="
 			print "============== RESIDUE NUMBER: " + str(i+1) + " =============="
+			print "Residue: " + str(res[i])
 			#----------------------------For N---------------------------------------------
 			#Grab all atoms within 5.0 A of target
 			cloud = u.select_atoms("around 5.0 atom SYSTEM " + str(res[i].id) + " H")
@@ -232,20 +233,26 @@ for ts in u.trajectory:
 					continue
 				else:
 					if ref_name in atom_reference:
-						# Compute distance based upon type
-						if atom_reference[ref_name] in "R":
-							processed_cloud.append([atom, distance(atom.pos, res[i].H.pos)])
-							print str(atom_reference[ref_name]) + " atom just added to processed_cloud: " + str(atom)
-						elif atom_reference[ref_name] in "C":
-							C_dist = distance(atom.pos, res[i].H.pos)
-							if C_dist <= 4.0:
-								processed_cloud.append([atom, C_dist])
-								print str(atom_reference[ref_name]) + " atom (within 4.0) just added to processed_cloud: " + str(atom)
+						x = res[i].N.pos - res[i].H.pos
+						v = atom.pos - res[i].H.pos
+						if abs(vangle(x, v)) < 90.0:
+							continue
 						else:
-							dist = distance(atom.pos, res[i].H.pos)
-							if dist <= 2.5:
-								processed_cloud.append([atom, dist])
-								print str(atom_reference[ref_name]) + " atom (within 2.5) just added to processed_cloud: " + str(atom)
+							print "The result of vangle is: " + str(abs(vangle(x,v)))
+							# Compute distance based upon type
+							if atom_reference[ref_name] in "R":
+								processed_cloud.append([atom, distance(atom.pos, res[i].H.pos)])
+								print str(atom_reference[ref_name]) + " atom just added to processed_cloud: " + str(atom)
+							elif atom_reference[ref_name] in "C":
+								C_dist = distance(atom.pos, res[i].H.pos)
+								if C_dist <= 4.0:
+									processed_cloud.append([atom, C_dist])
+									print str(atom_reference[ref_name]) + " atom (within 4.0) just added to processed_cloud: " + str(atom)
+							else:
+								dist = distance(atom.pos, res[i].H.pos)
+								if dist <= 2.5:
+									processed_cloud.append([atom, dist])
+									print str(atom_reference[ref_name]) + " atom (within 2.5) just added to processed_cloud: " + str(atom)
 								
 			if processed_cloud is None:
 				print "The processed_cloud is empty."
@@ -260,15 +267,10 @@ for ts in u.trajectory:
 					print "\nThere are " + str(len(processed_cloud_02)) + " atoms after the second round of processing."
 					processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
 					for atom in processed_cloud_02:
-						'''print "\nDistance (d1) res[i].H: " + str("{0:.3f}".format(distance(res[i].H.pos, atom[0].pos)))
-						print "Distance (d2) res[i-1].N: " + str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos)))
-						print "Distance (d3) res[i].CA: " + str("{0:.3f}".format(distance(res[i].CA.pos, atom[0].pos)))
-						print "Distance (d4) res[i].O: " + str("{0:.3f}".format(distance(res[i].O.pos, atom[0].pos)))
-						print "Distance (d5) res[i+1].N: " + str("{0:.3f}".format(distance(res[i+1].N.pos, atom[0].pos))) '''
 						atom_pattern_N+= atom_reference[atom[0].name + atom[0].resname] + ':'
 						atom_pattern_dist += str("{0:.3f}".format(distance(res[i].H.pos, atom[0].pos))) + '|' + \
 							str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[i ].CA.pos, atom[0].pos))) + '|' + \
+							str("{0:.3f}".format(distance(res[i-2].O.pos, atom[0].pos))) + '|' + \
 							str("{0:.3f}".format(distance(res[ i ].O.pos, atom[0].pos))) + '|' + \
 							str("{0:.3f}".format(distance(res[i+1].N.pos, atom[0].pos))) + '|'
 
@@ -301,7 +303,9 @@ for ts in u.trajectory:
 						if ref_name in atom_reference and "C" in atom_reference[ref_name]:
 							continue
 						else:
-							if abs(vangle(atom, res[o])) < 90.0:
+							x = res[o].N.pos - res[o].O.pos
+							v = atom.pos - res[o].O.pos
+							if abs(vangle(x, v)) < 90.0:
 								continue
 							else:
 								if ref_name in atom_reference:
@@ -317,18 +321,12 @@ for ts in u.trajectory:
 					else:
 						processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
 						for atom in processed_cloud_02:
-							'''print "\nOxygen distances:"
-							print "\nDistance (d1) res[o].O: " + str("{0:.3f}".format(distance(res[o].O.pos, atom[0].pos)))
-							print "Distance (d2) res[o].N: " + str("{0:.3f}".format(distance(res[o].N.pos, atom[0].pos)))
-							print "Distance (d3) res[o].H: " + str("{0:.3f}".format(distance(res[o].H.pos, atom[0].pos)))
-							print "Distance (d4) res[o+1].O: " + str("{0:.3f}".format(distance(res[o+1].O.pos, atom[0].pos)))
-							print "Distance (d5) res[o+1].N: " + str("{0:.3f}".format(distance(res[o+2].N.pos, atom[0].pos))) '''
 							atom_pattern_O += atom_reference[atom[0].name + atom[0].resname] + ":"
 							atom_pattern_dist += str("{0:.3f}".format(distance(res[o].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[ i].CA.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[ i ].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[i+1].N.pos, atom[0].pos))) + '|'
+								str("{0:.3f}".format(distance(res[o].N.pos, atom[0].pos))) + '|' + \
+								str("{0:.3f}".format(distance(res[o-1].O.pos, atom[0].pos))) + '|' + \
+								str("{0:.3f}".format(distance(res[o+1].O.pos, atom[0].pos))) + '|' + \
+								str("{0:.3f}".format(distance(res[o+2].N.pos, atom[0].pos))) + '|'
 				
 				# d3 becomes d1 in the next residue
 				d3 = str("{0:.3f}".format(distance(res[o+1].O.pos, res[o].O.pos)))
@@ -344,6 +342,7 @@ for ts in u.trajectory:
 		elif i > 2 and res[i].name not in "PRO":
 			print "\n============== FRAME NUMBER: " + str(ts.frame) + " =============="
 			print "============== RESIDUE NUMBER: " + str(i+1) + " =============="
+			print "Residue: " + str(res[i])
 			# -------------------------------------------------For N------------------------------------------------------------------------------------		
 			#Grab all atoms within 5.0 A of target
 			cloud = u.select_atoms("around 5.0 atom SYSTEM " + str(res[i].id) + " H")
@@ -361,20 +360,25 @@ for ts in u.trajectory:
 					continue
 				else:
 					if ref_name in atom_reference:
-						# Compute distance based upon type
-						if atom_reference[ref_name] in "R":
-							processed_cloud.append([atom, distance(atom.pos, res[i].H.pos)])
-							print str(atom_reference[ref_name]) + " atom just added to processed_cloud: " + str(atom)
-						elif atom_reference[ref_name] in "C":
-							C_dist = distance(atom.pos, res[i].H.pos)
-							if C_dist <= 4.0:
-								processed_cloud.append([atom, C_dist])
-								print str(atom_reference[ref_name]) + " atom (within 4.0) just added to processed_cloud: " + str(atom)
+						x = res[i].N.pos - res[i].H.pos
+						v = atom.pos - res[i].H.pos
+						if abs(vangle(x, v)) < 90.0:
+							continue
 						else:
-							dist = distance(atom.pos, res[i].H.pos)
-							if dist <= 2.5:
-								processed_cloud.append([atom, dist])
-								print str(atom_reference[ref_name]) + " atom (within 2.5) just added to processed_cloud: " + str(atom)
+							# Compute distance based upon type
+							if atom_reference[ref_name] in "R":
+								processed_cloud.append([atom, distance(atom.pos, res[i].H.pos)])
+								print str(atom_reference[ref_name]) + " atom just added to processed_cloud: " + str(atom)
+							elif atom_reference[ref_name] in "C":
+								C_dist = distance(atom.pos, res[i].H.pos)
+								if C_dist <= 4.0:
+									processed_cloud.append([atom, C_dist])
+									print str(atom_reference[ref_name]) + " atom (within 4.0) just added to processed_cloud: " + str(atom)
+							else:
+								dist = distance(atom.pos, res[i].H.pos)
+								if dist <= 2.5:
+									processed_cloud.append([atom, dist])
+									print str(atom_reference[ref_name]) + " atom (within 2.5) just added to processed_cloud: " + str(atom)
 
 			if processed_cloud is None:
 				print "The processed_cloud is empty."
@@ -389,11 +393,6 @@ for ts in u.trajectory:
 					print "\nThere are " + str(len(processed_cloud_02)) + " atoms after the second round of processing."
 					processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
 					for atom in processed_cloud_02:
-						'''print "\nDistance (d1) res[i].H: " + str("{0:.3f}".format(distance(res[i].H.pos, atom[0].pos)))
-						print "Distance (d2) res[i-1].N: " + str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos)))
-						print "Distance (d3) res[i].CA: " + str("{0:.3f}".format(distance(res[i].CA.pos, atom[0].pos)))
-						print "Distance (d4) res[i].O: " + str("{0:.3f}".format(distance(res[i].O.pos, atom[0].pos)))
-						print "Distance (d5) res[i+1].N: " + str("{0:.3f}".format(distance(res[i+1].N.pos, atom[0].pos)))'''
 						atom_pattern_N+= atom_reference[atom[0].name + atom[0].resname] + ':'
 						atom_pattern_dist += str("{0:.3f}".format(distance(res[i].H.pos, atom[0].pos))) + '|' + \
 							str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos))) + '|' + \
@@ -430,7 +429,9 @@ for ts in u.trajectory:
 						if ref_name in atom_reference and "C" in atom_reference[ref_name]:
 							continue
 						else:
-							if abs(vangle(atom, res[o])) < 90.0:
+							x = res[i].N.pos - res[i].H.pos
+							v = atom.pos - res[i].H.pos
+							if abs(vangle(x, v)) < 90.0:
 								continue
 							else:
 								if ref_name in atom_reference:
@@ -448,10 +449,10 @@ for ts in u.trajectory:
 						for atom in processed_cloud_02:
 							atom_pattern_O += atom_reference[atom[0].name + atom[0].resname] + ":"
 							atom_pattern_dist += str("{0:.3f}".format(distance(res[o].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[ i].CA.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[ i ].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[i+1].N.pos, atom[0].pos))) + '|'
+								str("{0:.3f}".format(distance(res[o].N.pos, atom[0].pos))) + '|' + \
+								str("{0:.3f}".format(distance(res[o-1].O.pos, atom[0].pos))) + '|' + \
+								str("{0:.3f}".format(distance(res[o+1].O.pos, atom[0].pos))) + '|' + \
+								str("{0:.3f}".format(distance(res[o+2].N.pos, atom[0].pos))) + '|'
 
 				# d3 becomes d1 in the next residue
 				d3 = str("{0:.3f}".format(distance(res[o+1].O.pos, res[o].O.pos)))
