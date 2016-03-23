@@ -10,19 +10,35 @@ import time
 from os.path import splitext
 from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
+import __builtin__
+
+# Retrieve input files
+exc = getattr(__builtin__,"IOError","FileNotFoundError")
+	
+while True:
+	top_name = raw_input("Hello, please type in the name of the topology file (.prmtop) and press 'Enter': ")
+	try:
+		top = open(top_name)
+	except exc:
+		print("Wrong file or file path")
+	else:
+		break
+
+while True:
+	traj_name = raw_input("Hello, please type in the name of the trajectory file (.dcd) and press 'Enter': ")
+	try:
+		traj = open(traj_name)
+	except exc:
+		print("Wrong file or file path")
+	else:
+		break
 
 start_time=time.time()
 
-# Retrieve input files
-top_name = sys.argv[1]
-traj_name = sys.argv[2]
-
 # Set up universe, selections and data structures
-try:
-	u = MDAnalysis.Universe(top_name, traj_name)
-except ValueError:
-	print "------------------Wrong Input Files entered: Please enter in following order: top_name, traj_name--------------------------"
+u = MDAnalysis.Universe(top_name, traj_name)
 prot = u.select_atoms("protein")
+
 res = prot.atoms.residues
 bb_atoms = ["N", "CA", "C", "O"]
 
