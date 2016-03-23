@@ -10,33 +10,21 @@ import time
 from os.path import splitext
 from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
-import __builtin__
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("topology_filename",
+                    help="input file with (.prmtop) extension")
+parser.add_argument("trajectory_filename",
+                    help="input file with (.dcd) extension")
+args = parser.parse_args()
 
 # Retrieve input files
-exc = getattr(__builtin__,"IOError","FileNotFoundError")
-	
-while True:
-	top_name = raw_input("Hello, please type in the name of the topology file (.prmtop) and press 'Enter': ")
-	try:
-		top = open(top_name)
-	except exc:
-		print("Wrong file or file path")
-	else:
-		break
-
-while True:
-	traj_name = raw_input("Hello, please type in the name of the trajectory file (.dcd) and press 'Enter': ")
-	try:
-		traj = open(traj_name)
-	except exc:
-		print("Wrong file or file path")
-	else:
-		break
 
 start_time=time.time()
 
 # Set up universe, selections and data structures
-u = MDAnalysis.Universe(top_name, traj_name)
+u = MDAnalysis.Universe(args.topology_filename, args.trajectory_filename)
 prot = u.select_atoms("protein")
 
 res = prot.atoms.residues
