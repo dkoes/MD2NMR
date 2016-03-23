@@ -18,7 +18,10 @@ top_name = sys.argv[1]
 traj_name = sys.argv[2]
 
 # Set up universe, selections and data structures
-u = MDAnalysis.Universe(top_name, traj_name)
+try:
+	u = MDAnalysis.Universe(top_name, traj_name)
+except ValueError:
+	print "------------------Wrong Input Files entered: Please enter in following order: top_name, traj_name--------------------------"
 prot = u.select_atoms("protein")
 res = prot.atoms.residues
 bb_atoms = ["N", "CA", "C", "O"]
