@@ -190,8 +190,8 @@ open_N_files = []
 
 # Open all files at the beginning
 for i in range(2, len(res)-2):
-	file_name_O = 'DUMP.O.' + str(i+1) + '.txt'
-	file_name_N = 'DUMP.N.' + str(i+1) + '.txt'
+	file_name_O = 'output/DUMP.O.' + str(i+1)
+	file_name_N = 'output/DUMP.N.' + str(i+1)
 	
 	f_O = open(file_name_O,'w')
 	f_N = open(file_name_N,'w')
@@ -205,7 +205,7 @@ for ts in u.trajectory:
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
 		if i == 2 and res[i].name not in "PRO":
 			######################################################
-			##  Process the N dome								##
+			##  Process the N dome								
 			######################################################
 			
 			# Select all atoms within 5.0 A of target
@@ -232,10 +232,10 @@ for ts in u.trajectory:
 							continue
 						else:
 							######################################################
-							##  Compute distance between atoms based on types	##
-							##  Aromatic atoms: within 5.0 A 					##
-							##  Carbon atoms: 	within 4.0 A 					##
-							##  Other atoms: 	wtihin 2.5 A 					##
+							##  Compute distance between atoms based on types	
+							##  Aromatic atoms: within 5.0 A 					
+							##  Carbon atoms: 	within 4.0 A 					
+							##  Other atoms: 	wtihin 2.5 A 					
 							######################################################
 							if atom_reference[ref_name] in "R":
 								processed_cloud.append([atom, distance(atom.pos, res[i].H.pos)])
@@ -282,7 +282,7 @@ for ts in u.trajectory:
 			o = i - 1
 			if (o + 2) < len(res)-1:
 				######################################################
-				##  Process the O dome								##
+				##  Process the O dome								
 				######################################################
 
 				# Select all atoms within 3.9 A of target
@@ -349,7 +349,7 @@ for ts in u.trajectory:
 					atom_pattern_dist + '\n')
 		elif i > 2 and res[i].name not in "PRO":
 			######################################################
-			##  Process the N dome								##
+			##  Process the N dome								
 			######################################################
 			
 			# Select all atoms within 5.0 A of target
@@ -376,10 +376,10 @@ for ts in u.trajectory:
 							continue
 						else:
 							######################################################
-							##  Compute distance between atoms based on types	##
-							##  Aromatic atoms: within 5.0 A 					##
-							##  Carbon atoms: 	within 4.0 A 					##
-							##  Other atoms: 	wtihin 2.5 A 					##
+							##  Compute distance between atoms based on types	
+							##  Aromatic atoms: within 5.0 A 					
+							##  Carbon atoms: 	within 4.0 A 					
+							##  Other atoms: 	wtihin 2.5 A 					
 							######################################################
 							if atom_reference[ref_name] in "R":
 								processed_cloud.append([atom, distance(atom.pos, res[i].H.pos)])
@@ -426,7 +426,7 @@ for ts in u.trajectory:
 			o = i - 1
 			if o+2 < len(res)-1:
 				######################################################
-				##  Process the O dome								##
+				##  Process the O dome								
 				######################################################
 
 				# Select all atoms within 3.9 A of target
