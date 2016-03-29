@@ -154,10 +154,8 @@ def find_closest_atom(cloud, target_atom):
 	# If there are no O atoms and there are other atoms, return the other atoms
 	elif nearestO == None and len(other_atoms) > 0:
 		return other_atoms
-	# If there is an O, add it first to the list of closest atoms, then find closest C to nearestO
-	else:
-		if nearestO:
-			nearest_atoms.append(nearestO)
+	# Add all oxygens
+	nearest_atoms += oxygens
 	
 	# Finds closest C to previously found nearestO
 	if len(carbons) > 0:
@@ -305,7 +303,7 @@ for ts in u.trajectory:
 							if "C" in atom_reference[ref_name]:
 								continue
 							else:
-								x = res[o].N.pos - res[o].O.pos
+								x = res[o+1].N.pos - res[o].O.pos
 								v = atom.pos - res[o].O.pos
 
 								# Eliminate any atoms that have vector angles less than 90.0
@@ -449,7 +447,7 @@ for ts in u.trajectory:
 							if "C" in atom_reference[ref_name]:
 								continue
 							else:
-								x = res[o].N.pos - res[o].O.pos
+								x = res[o+1].N.pos - res[o].O.pos
 								v = atom.pos - res[o].O.pos
 
 								# Eliminate any atoms that have vector angles less than 90.0
