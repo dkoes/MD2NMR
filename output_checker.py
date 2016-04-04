@@ -25,7 +25,7 @@ for i in range(0, len(new_filenames)):
 		# Output what frame number is being checked
 		orig_frame_num = orig_frame_and_dist[0]
 		new_frame_num = new_frame_and_dist[0]
-		print '\nChecking original frame number: ' + orig_frame_num + ' against new frame number: ' + str(new_frame_num)
+		print '\nFrame #: ' + new_frame_num
 
 		# Check for atom pattern
 		orig_atom_pattern = orig_hold[0].split(':')
@@ -36,12 +36,9 @@ for i in range(0, len(new_filenames)):
 				if orig_atom_pattern[a] == new_atom_pattern[a]:
 					continue
 				else:
-					print "\nWrong atom pattern: "
-					print "Original has " + orig_atom_pattern[a] + " and new output has " + new_atom_pattern[a]
+					print "Wrong atom pattern: " + orig_atom_pattern[a] + " and new output has " + new_atom_pattern[a]
 		else:
-			print "\nWrong atom pattern: "
-			print "Original has " + str(orig_atom_pattern)
-			print "New output has " + str(new_atom_pattern)
+			print "Wrong atom pattern: " + str(orig_atom_pattern) + " new output has " + str(new_atom_pattern)
 
 		# Compare distances
 		orig_dists = orig_frame_and_dist[1].split('|')
@@ -52,9 +49,6 @@ for i in range(0, len(new_filenames)):
 				if orig_dists[d][:4] == new_dists[d][:4]:
 					continue
 				else:
-					print "\nWrong distance: "
-					print "Original has " + orig_dists[d] + " and new output has " + new_dists[d]
+					print "Wrong distance, original: " + orig_dists[d] + " new: " + new_dists[d]
 		else:
-			print "\nWrong distances: " 
-			print "Original has: " + str(orig_dists)
-			print "New output has " + str(new_dists)
+			print "Wrong distances, original has: " + str(orig_dists) + " new output has " + str(new_dists)
