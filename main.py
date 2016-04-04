@@ -2,7 +2,9 @@
 
 # Script that analyzes a simulation and outputs the 
 # frame number and atom distances.
-
+import cProfile
+import pstats
+import StringIO
 import sys, MDAnalysis
 import math
 import numpy as np
@@ -201,7 +203,7 @@ for i in range(2, len(res)-2):
 for ts in u.trajectory:
 	print "\nProcessing frame #: " + str(ts.frame)
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
-		if i == 2 and res[i].name not in "PRO":
+		if res[i].name not in "PRO":
 			######################################################
 			##  Process the N dome								
 			######################################################
@@ -249,18 +251,20 @@ for ts in u.trajectory:
 			# Second round of processing					
 			if processed_cloud is None:
 				atom_pattern_N = "Z:"
+				atom_pattern_dist += "0.000|0.000|0.000|0.000|0.000|"
 			else:
 				processed_cloud_02 = find_closest_atom(processed_cloud, res[i].H)
-			
+		
 				if processed_cloud_02 == None:
 					atom_pattern_N = "Z:"
+					atom_pattern_dist += "0.000|0.000|0.000|0.000|0.000|"
 				else:
 					# Rank atoms based on the atom type preferences noted above
 					processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
 					
 					# Generate the atom pattern with their corresponding distances
 					for atom in processed_cloud_02:
-						atom_pattern_N+= atom_reference[atom[0].name + atom[0].resname] + ':'
+						atom_pattern_N += atom_reference[atom[0].name + atom[0].resname] + ':'
 						atom_pattern_dist += str("{0:.3f}".format(distance(res[i].H.pos, atom[0].pos))) + '|' + \
 							str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos))) + '|' + \
 							str("{0:.3f}".format(distance(res[i-2].O.pos, atom[0].pos))) + '|' + \
@@ -276,9 +280,10 @@ for ts in u.trajectory:
 				str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].H.pos))) + '|' + \
 				atom_pattern_dist + '\n')
 
-			# Intentionally offset the oxygen output	
-			o = i - 1
-			if (o + 2) < len(res)-1:
+		# Intentionally offset the oxygen output	
+		o = i - 1
+		if (o + 2) < len(res)-1:
+			if res[o].name not in "PRO":
 				######################################################
 				##  Process the O dome								
 				######################################################
@@ -316,11 +321,13 @@ for ts in u.trajectory:
 				# Second round of processing
 				if processed_cloud is None:
 					atom_pattern_O = "Z:"
+					atom_pattern_dist += "0.000|0.000|0.000|0.000|0.000|"
 				else:
 					processed_cloud_02 = find_closest_atom(processed_cloud, res[o].O)
 			
 					if processed_cloud_02 == None or len(processed_cloud_02) < 1:
 						atom_pattern_O = "Z:"
+						atom_pattern_dist += "0.000|0.000|0.000|0.000|0.000|"
 					else:
 						# Rank atoms based on the atom type preferences noted above
 						processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
@@ -334,161 +341,14 @@ for ts in u.trajectory:
 								str("{0:.3f}".format(distance(res[o+1].O.pos, atom[0].pos))) + '|' + \
 								str("{0:.3f}".format(distance(res[o+2].N.pos, atom[0].pos))) + '|'
 				
-				# d3 becomes d1 in the next residues
-				d3 = str("{0:.3f}".format(distance(res[o+1].O.pos, res[o].O.pos)))
-				next_res_dist.append(d3) 
-
 				# Write the output to the open file
 				open_O_files[f].write(atom_pattern_O + '|' + str(ts.frame) + '|' + \
 					str("{0:.3f}".format(distance(res[ o ].N.pos, res[o].O.pos))) + '|' + \
 					str("{0:.3f}".format(distance(res[o-1].O.pos, res[o].O.pos))) + '|' + \
 					str("{0:.3f}".format(distance(res[o+1].N.pos, res[o].O.pos))) + '|' + \
-					d3 + '|' + str("{0:.3f}".format(distance(res[o+2].N.pos, res[o].O.pos))) + '|' + \
-					atom_pattern_dist + '\n')
-		elif i > 2 and res[i].name not in "PRO":
-			######################################################
-			##  Process the N dome								
-			######################################################
-			
-			# Select all atoms within 5.0 A of target
-			cloud = u.select_atoms("around 5.0 atom SYSTEM " + str(res[i].id) + " H")
-			processed_cloud = []
-			processed_cloud_02 = []
-			atom_pattern_N = ''
-			atom_pattern_dist = ''
-
-			# First round of processing
-			for atom in cloud:
-				ref_name = atom.name + atom.resname
-				
-				# Check to ensure backbone atoms within (+/-) 2 residues are not included
-				if atom.name in bb_atoms and abs(res[i].id - atom.resid) < 3:
-					continue
-				else:
-					if ref_name in atom_reference:
-						x = res[i].N.pos - res[i].H.pos
-						v = atom.pos - res[i].H.pos
-						
-						# Eliminate any atoms that have vector angles less than 90.0
-						if abs(vangle(x, v)) < 90.0:
-							continue
-						else:
-							######################################################
-							##  Compute distance between atoms based on types	
-							##  Aromatic atoms: within 5.0 A 					
-							##  Carbon atoms: 	within 4.0 A 					
-							##  Other atoms: 	wtihin 2.5 A 					
-							######################################################
-							if atom_reference[ref_name] in "R":
-								processed_cloud.append([atom, distance(atom.pos, res[i].H.pos)])
-							elif atom_reference[ref_name] in "C":
-								C_dist = distance(atom.pos, res[i].H.pos)
-								if C_dist <= 4.0:
-									processed_cloud.append([atom, C_dist])
-							else:
-								dist = distance(atom.pos, res[i].H.pos)
-								if dist <= 2.5:
-									processed_cloud.append([atom, dist])
-
-			# Second round of processing
-			if processed_cloud is None:
-				atom_pattern_N = "Z:"
-			else:
-				processed_cloud_02 = find_closest_atom(processed_cloud, res[i].H)
-			
-				if processed_cloud_02 == None:
-					atom_pattern_N = "Z:"
-				else:
-					# Rank atoms based on the atom type preferences noted above
-					processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
-					
-					# Generate the atom pattern with their corresponding distances
-					for atom in processed_cloud_02:
-						atom_pattern_N+= atom_reference[atom[0].name + atom[0].resname] + ':'
-						atom_pattern_dist += str("{0:.3f}".format(distance(res[i].H.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[i ].CA.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[ i ].O.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[i+1].N.pos, atom[0].pos))) + '|'
-
-			# Write the output to the open file
-			open_N_files[f].write(atom_pattern_N + '|' + str(ts.frame) + '|' + \
-				str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].H.pos))) + '|' + \
-				str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].H.pos))) + '|' + \
-				str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].H.pos))) + '|' + \
-				str("{0:.3f}".format(distance(res[ i ].O.pos, res[i].H.pos))) + '|' + 
-				str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].H.pos))) + '|' + \
-				atom_pattern_dist + '\n')
-
-			# Intentionally offset the oxygen output
-			o = i - 1
-			if o+2 < len(res)-1:
-				######################################################
-				##  Process the O dome								
-				######################################################
-
-				# Select all atoms within 3.9 A of target
-				cloud = u.select_atoms("around 3.9 atom SYSTEM " + str(res[o].id) + " O")
-				processed_cloud = []
-				processed_cloud_02 = []
-				atom_pattern_O = ''
-				atom_pattern_dist = ''
-			
-				# First round of processing
-				for atom in cloud:
-					ref_name = atom.name + atom.resname
-
-					# Check to ensure backbone atoms within (+/-) 2 residues are not included
-					if atom.name in bb_atoms and abs(res[o].id - atom.resid) < 3:
-						continue
-					else:
-						if ref_name in atom_reference:
-							# Eliminate all Carbon atoms
-							if "C" in atom_reference[ref_name]:
-								continue
-							else:
-								x = res[o+1].N.pos - res[o].O.pos
-								v = atom.pos - res[o].O.pos
-
-								# Eliminate any atoms that have vector angles less than 90.0
-								if abs(vangle(x, v)) < 90.0:
-									continue
-								else:
-									if ref_name in atom_reference:
-										processed_cloud.append([atom, distance(atom.pos, res[o].O.pos)])
-				
-				# Second round of processing
-				if processed_cloud is None:
-					atom_pattern_O = "Z:"
-				else:
-					processed_cloud_02 = find_closest_atom(processed_cloud, res[o].O)
-			
-					if processed_cloud_02 == None or len(processed_cloud_02) < 1:
-						atom_pattern_O = "Z:"
-					else:
-						# Rank atoms based on the atom type preferences noted above
-						processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
-						
-						# Generate the atom pattern with their corresponding distances
-						for atom in processed_cloud_02:
-							atom_pattern_O += atom_reference[atom[0].name + atom[0].resname] + ":"
-							atom_pattern_dist += str("{0:.3f}".format(distance(res[o].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o].N.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o-1].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o+1].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o+2].N.pos, atom[0].pos))) + '|'
-
-				# d3 becomes d1 in the next residue
-				d3 = str("{0:.3f}".format(distance(res[o+1].O.pos, res[o].O.pos)))
-
-				# Write the output to the open file
-				open_O_files[f].write(atom_pattern_O + '|' + str(ts.frame) + '|' + \
-					str("{0:.3f}".format(distance(res[ o ].N.pos, res[o].O.pos))) + '|' + next_res_dist[0] + '|' + \
-					str("{0:.3f}".format(distance(res[o+1].N.pos, res[o].O.pos))) + '|' + d3 + '|' + \
+					str("{0:.3f}".format(distance(res[o+1].O.pos, res[o].O.pos))) + '|' + \
 					str("{0:.3f}".format(distance(res[o+2].N.pos, res[o].O.pos))) + '|' + \
 					atom_pattern_dist + '\n')
-				next_res_dist[0] = d3
-		else:
-			continue
-
+cProfile.run('find_closest_atom()')
+print_stats();
 print "Program time: " + str("{0:.3f}".format(time.time() - start_time)) + " seconds."
