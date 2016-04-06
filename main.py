@@ -14,23 +14,19 @@ from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
 import argparse
 
+start_time = time.time()
+
+# User-friendly argument handling
 parser = argparse.ArgumentParser()
-parser.add_argument("topology_filename",
-                    help="input file with (.prmtop) extension")
-parser.add_argument("trajectory_filename",
-                    help="input file with (.dcd) extension")
+parser.add_argument("topology_filename",   help="input file with (.prmtop) extension")
+parser.add_argument("trajectory_filename", help="input file with (.dcd) extension")
 args = parser.parse_args()
-
-# Retrieve input files
-
-start_time=time.time()
 
 # Set up universe, selections and data structures
 u = MDAnalysis.Universe(args.topology_filename, args.trajectory_filename)
 prot = u.select_atoms("protein")
-
 res = prot.atoms.residues
-bb_atoms = ["N", "CA", "C", "O"]
+bb_atoms = ["N", "O"]
 
 # Dictionary that maps atom names to groups
 atom_reference = {
@@ -156,7 +152,8 @@ def find_closest_atom(cloud, target_atom):
 	# If there are no O atoms and there are other atoms, return the other atoms
 	elif nearestO == None and len(other_atoms) > 0:
 		return other_atoms
-	# Add all oxygens
+	
+	# Add all remaining oxygens
 	nearest_atoms += oxygens
 	
 	# Finds closest C to previously found nearestO
@@ -181,9 +178,6 @@ def find_closest_atom(cloud, target_atom):
 ## Main code - opens all files, iterates through each timestep once while iterating through residues.               ##
 ######################################################################################################################
 
-# Holds calculations that are used more than once
-next_res_dist = []
-
 # Holds all open files
 open_O_files = []
 open_N_files = []
@@ -199,9 +193,12 @@ for i in range(2, len(res)-2):
 	open_O_files.append(f_O)
 	open_N_files.append(f_N)
 
-# Iterates through every residue in each frame, computing and writing the distance between N's and O's
+# Iterate through each frame
 for ts in u.trajectory:
+	
 	print "\nProcessing frame #: " + str(ts.frame)
+	
+	# Simultaneously iterate through each residue and corresponding open file
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
 		if res[i].name not in "PRO":
 			######################################################
@@ -210,6 +207,7 @@ for ts in u.trajectory:
 			
 			# Select all atoms within 5.0 A of target
 			cloud = u.select_atoms("around 5.0 atom SYSTEM " + str(res[i].id) + " H")
+			
 			processed_cloud = []
 			processed_cloud_02 = []
 			atom_pattern_N = ''
@@ -224,6 +222,7 @@ for ts in u.trajectory:
 					continue
 				else:
 					if ref_name in atom_reference:
+						# Variables for calculating the vector angles of each atom
 						x = res[i].N.pos - res[i].H.pos
 						v = atom.pos - res[i].H.pos
 
@@ -265,20 +264,17 @@ for ts in u.trajectory:
 					# Generate the atom pattern with their corresponding distances
 					for atom in processed_cloud_02:
 						atom_pattern_N += atom_reference[atom[0].name + atom[0].resname] + ':'
-						atom_pattern_dist += str("{0:.3f}".format(distance(res[i].H.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[i-1].N.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[i-2].O.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[ i ].O.pos, atom[0].pos))) + '|' + \
-							str("{0:.3f}".format(distance(res[i+1].N.pos, atom[0].pos))) + '|'
+						atom_pattern_dist += "{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}|".format(
+							distance(res[i].H.pos,   atom[0].pos),distance(res[i-1].N.pos, atom[0].pos),
+							distance(res[i-2].O.pos, atom[0].pos),distance(res[ i ].O.pos, atom[0].pos),
+							distance(res[i+1].N.pos, atom[0].pos))
 
 			# Write the output to the open file
-			open_N_files[f].write(atom_pattern_N + '|' + str(ts.frame) + '|' + \
-				str("{0:.3f}".format(distance(res[i-1].N.pos, res[i].H.pos))) + '|' + \
-				str("{0:.3f}".format(distance(res[i-2].O.pos, res[i].H.pos))) + '|' + \
-				str("{0:.3f}".format(distance(res[i-1].O.pos, res[i].H.pos))) + '|' + \
-				str("{0:.3f}".format(distance(res[ i ].O.pos, res[i].H.pos))) + '|' + \
-				str("{0:.3f}".format(distance(res[i+1].N.pos, res[i].H.pos))) + '|' + \
-				atom_pattern_dist + '\n')
+			open_N_files[f].write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}|{7}\n".format(
+					atom_pattern_N,ts.frame,
+					distance(res[i-1].N.pos, res[i].H.pos),distance(res[i-2].O.pos, res[i].H.pos),
+					distance(res[i-1].O.pos, res[i].H.pos),distance(res[ i ].O.pos, res[i].H.pos),
+					distance(res[i+1].N.pos, res[i].H.pos),atom_pattern_dist))
 
 		# Intentionally offset the oxygen output	
 		o = i - 1
@@ -290,6 +286,7 @@ for ts in u.trajectory:
 
 				# Select all atoms within 3.9 A of target
 				cloud = u.select_atoms("around 3.9 atom SYSTEM " + str(res[o].id) + " O")
+				
 				processed_cloud = []
 				processed_cloud_02 = []
 				atom_pattern_O = ''
@@ -308,6 +305,7 @@ for ts in u.trajectory:
 							if "C" in atom_reference[ref_name]:
 								continue
 							else:
+								# Variables for calculating the vector angles of each atom
 								x = res[o+1].N.pos - res[o].O.pos
 								v = atom.pos - res[o].O.pos
 
@@ -335,20 +333,16 @@ for ts in u.trajectory:
 						# Generate the atom pattern with their corresponding distances
 						for atom in processed_cloud_02:
 							atom_pattern_O += atom_reference[atom[0].name + atom[0].resname] + ":"
-							atom_pattern_dist += str("{0:.3f}".format(distance(res[o].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o].N.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o-1].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o+1].O.pos, atom[0].pos))) + '|' + \
-								str("{0:.3f}".format(distance(res[o+2].N.pos, atom[0].pos))) + '|'
+							atom_pattern_dist += "{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}|".format(
+								distance(res[o].O.pos,   atom[0].pos),distance(res[o].N.pos,   atom[0].pos),
+								distance(res[o-1].O.pos, atom[0].pos),distance(res[o+1].O.pos, atom[0].pos),
+								distance(res[o+2].N.pos, atom[0].pos))
 				
 				# Write the output to the open file
-				open_O_files[f].write(atom_pattern_O + '|' + str(ts.frame) + '|' + \
-					str("{0:.3f}".format(distance(res[ o ].N.pos, res[o].O.pos))) + '|' + \
-					str("{0:.3f}".format(distance(res[o-1].O.pos, res[o].O.pos))) + '|' + \
-					str("{0:.3f}".format(distance(res[o+1].N.pos, res[o].O.pos))) + '|' + \
-					str("{0:.3f}".format(distance(res[o+1].O.pos, res[o].O.pos))) + '|' + \
-					str("{0:.3f}".format(distance(res[o+2].N.pos, res[o].O.pos))) + '|' + \
-					atom_pattern_dist + '\n')
-cProfile.run('find_closest_atom()')
-print_stats();
-print "Program time: " + str("{0:.3f}".format(time.time() - start_time)) + " seconds."
+				open_O_files[f].write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}|{7}\n".format(
+					atom_pattern_O,ts.frame,
+					distance(res[ o ].N.pos, res[o].O.pos),distance(res[o-1].O.pos, res[o].O.pos),
+					distance(res[o+1].N.pos, res[o].O.pos),distance(res[o+1].O.pos, res[o].O.pos),
+					distance(res[o+2].N.pos, res[o].O.pos),atom_pattern_dist))
+
+print "Program time: {0:.3f} seconds.".format(time.time() - start_time)
