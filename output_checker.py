@@ -1,15 +1,17 @@
 import os
 
-orig_filenames = os.listdir(os.getcwd() + '/koes/')
+orig_filenames = sorted(os.listdir(os.getcwd() + '/koes/'))
 
-new_filenames = os.listdir(os.getcwd() + '/output/')
+new_filenames = sorted(os.listdir(os.getcwd() + '/output/'))
 
-for i in range(0, len(new_filenames)):
-	print '\nChecking: ' + new_filenames[i]
-	orig = [line.rstrip('\n') for line in open(os.getcwd() + '/koes/' + orig_filenames[i])]
-	new = [line.rstrip('\n') for line in open(os.getcwd() + '/output/' + new_filenames[i])]
-
-	for j in range(0, len(new_filenames)):
+for fname in new_filenames:
+	print '\nChecking: ' + fname
+	orig = [line.rstrip('\n') for line in open(os.getcwd() + '/koes/' + fname)]
+	new = [line.rstrip('\n') for line in open(os.getcwd() + '/output/' + fname)]
+	if len(orig) != len(new):
+		print "Wrong number of lines in %s: %d vs %d" % (fname,len(orig),len(new))
+		continue;
+	for j in range(len(orig)):
 		# Split on the first '|'
 		orig_hold = orig[j].split('|', 1)
 		new_hold = new[j].split('|', 1)
@@ -46,9 +48,9 @@ for i in range(0, len(new_filenames)):
 
 		if len(orig_dists) == len(new_dists):
 			for d in range(0, len(new_dists)):
-				if orig_dists[d][:4] == new_dists[d][:4]:
+				if abs(float(orig_dists[d]) - float(new_dists[d])) < 0.01:
 					continue
 				else:
-					print "Wrong distance, original: " + orig_dists[d] + " new: " + new_dists[d]
+					print "Wrong distance, original: " + orig_dists[d] + " new: " + new_dists[d],"pattern:",orig_atom_pattern,new_atom_pattern
 		else:
 			print "Wrong distances, original has: " + str(orig_dists) + " new output has " + str(new_dists)
