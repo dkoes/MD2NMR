@@ -143,7 +143,7 @@ def find_closest_atom(cloud, target_atom):
 	for atom in oxygens:
 		dist = distance(atom[0].pos, target_atom.pos)
 		if dist < minO:
-			minC = dist
+			minO = dist
 			nearestO = atom
 	
 	# If there are no O atoms or any other atoms, return no atoms (None)
@@ -259,7 +259,7 @@ for ts in u.trajectory:
 					atom_pattern_dist += "0.000|0.000|0.000|0.000|0.000|"
 				else:
 					# Rank atoms based on the atom type preferences noted above
-					processed_cloud_02.sort(key = lambda atom: atom_ranking[atom_reference[atom[0].name + atom[0].resname]])
+					processed_cloud_02.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],distance(res[i].H.pos,   atom[0].pos)))
 					
 					# Generate the atom pattern with their corresponding distances
 					for atom in processed_cloud_02:
