@@ -134,7 +134,7 @@ def find_closest_atom(cloud, target_atom):
 		ref_name = atom[0].name + atom[0].resname
 		if atom_reference[ref_name] == 'C':
 			carbons.append(atom)
-		elif atom_reference[ref_name] == 'O':
+		elif atom[0].name == 'O' and atom_reference[ref_name] == 'O':
 			oxygens.append(atom)
 		else:
 			other_atoms.append(atom)
@@ -220,6 +220,8 @@ for ts in u.trajectory:
 				# Check to ensure backbone atoms within (+/-) 2 residues are not included
 				if atom.name in bb_atoms and abs(res[i].id - atom.resid) < 3:
 					continue
+                                elif atom.index == 0:
+                                        continue #original does this to "avoid irregularities"
 				else:
 					if ref_name in atom_reference:
 						# Variables for calculating the vector angles of each atom
@@ -299,6 +301,8 @@ for ts in u.trajectory:
 					# Check to ensure backbone atoms within (+/-) 2 residues are not included
 					if atom.name in bb_atoms and abs(res[o].id - atom.resid) < 3:
 						continue
+                                        elif atom.index == 0:
+                                            continue #original does this to "avoid irregularities"
 					else:
 						if ref_name in atom_reference:
 							# Eliminate all Carbon atoms
