@@ -12,6 +12,7 @@ import time
 from os.path import splitext
 from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
+from scipy import spatial
 import argparse
 
 start_time = time.time()
@@ -197,6 +198,8 @@ for i in range(2, len(res)-2):
 for ts in u.trajectory:
 	
 	print "\nProcessing frame #: " + str(ts.frame)
+
+	tree = spatial.KDTree([x.pos for x in u.residues.atoms])
 	
 	# Simultaneously iterate through each residue and corresponding open file
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
@@ -205,16 +208,19 @@ for ts in u.trajectory:
 			##  Process the N dome								
 			######################################################
 			
-			# Select all atoms within 5.0 A of target
-			orig_cloud = u.select_atoms("around 5.0 atom SYSTEM " + str(res[i].id) + " H")
+			# Original atom selection
+			# orig_cloud = u.select_atoms("around 5.0 atom SYSTEM " + str(res[i].id) + " H")
 			
+			#print tree.query_ball_point(res[i].H.pos, 5.0)
+
 			cloud = []
 			processed_cloud = []
 			atom_pattern_N = ''
 			atom_pattern_dist = ''
 			
-			# First round of processing
-			for atom in orig_cloud:
+			# First round of processing from enhanced atom selection
+			for j in tree.query_ball_point(res[i].H.pos, 5.0):
+				atom = u.residues.atoms[j]
 				ref_name = atom.name + atom.resname
 				
 				# Check to ensure backbone atoms within (+/-) 2 residues are not included
@@ -284,16 +290,17 @@ for ts in u.trajectory:
 				##  Process the O dome								
 				######################################################
 
-				# Select all atoms within 3.9 A of target
-				orig_cloud = u.select_atoms("around 3.9 atom SYSTEM " + str(res[o].id) + " O")
+				# Original atom selection
+				# orig_cloud = u.select_atoms("around 3.9 atom SYSTEM " + str(res[o].id) + " O")
 				
 				cloud = []
 				processed_cloud = []
 				atom_pattern_O = ''
 				atom_pattern_dist = ''
 
-				# First round of processing
-				for atom in orig_cloud:
+				# First round of processing from enhanced atom selection
+				for j in tree.query_ball_point(res[o].O.pos, 3.9):
+					atom = u.residues.atoms[j]
 					ref_name = atom.name + atom.resname
 
 					# Check to ensure backbone atoms within (+/-) 2 residues are not included
