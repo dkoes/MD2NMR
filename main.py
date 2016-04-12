@@ -3,7 +3,7 @@
 # Script that analyzes a simulation and outputs the 
 # frame number and atom distances.
 import cProfile
-import pstats
+import pstats, os
 import StringIO
 import sys, MDAnalysis
 import math
@@ -181,6 +181,9 @@ def find_closest_atom(cloud, target_atom):
 # Holds all open files
 open_O_files = []
 open_N_files = []
+
+if not os.path.exists('output'):
+	os.makedirs('output')
 
 # Open all files at the beginning
 for i in range(2, len(res)-2):
