@@ -210,8 +210,6 @@ for ts in u.trajectory:
 			
 			# Original atom selection
 			# orig_cloud = u.select_atoms("around 5.0 atom SYSTEM " + str(res[i].id) + " H")
-			
-			#print tree.query_ball_point(res[i].H.pos, 5.0)
 
 			cloud = []
 			processed_cloud = []
