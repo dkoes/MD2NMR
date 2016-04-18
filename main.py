@@ -14,7 +14,6 @@ from os.path import splitext
 from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
 from scipy import spatial
-from pykdtree.kdtree import KDTree
 
 start_time = time.time()
 
@@ -207,7 +206,7 @@ for ts in u.trajectory:
 	
 	# Simultaneously iterate through each residue and corresponding open file
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
-		if res[i].name not in "PRO":
+		if res[i].name != "PRO":
 			######################################################
 			##  Process the N dome								
 			######################################################
@@ -287,7 +286,7 @@ for ts in u.trajectory:
 		# Intentionally offset the oxygen output	
 		o = i - 1
 		if (o + 2) < len(res)-1:
-			if res[o].name not in "PRO":
+			if res[i].name != "PRO":
 				######################################################
 				##  Process the O dome								
 				######################################################
