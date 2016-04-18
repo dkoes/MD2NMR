@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 # Script that analyzes a molecular dynamics simulation for experimental validation.
+# Original takes 25.55 seconds and 2GB of RAM to do one residue
 
 import cProfile
 import pstats
@@ -14,7 +15,6 @@ from os.path import splitext
 from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
 from scipy import spatial
-from pykdtree.kdtree import KDTree
 
 start_time = time.time()
 
@@ -199,12 +199,12 @@ for ts in u.trajectory:
 	
 	print "\nProcessing frame #: " + str(ts.frame)
 
-	#tree = spatial.KDTree([x.pos for x in u.residues.atoms])
+	# Load this frame into a spatial cKDTree for fast nearest-neighbor search
 	tree = spatial.cKDTree(np.array([x.pos for x in u.residues.atoms]))
 	
 	# Simultaneously iterate through each residue and corresponding open file
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
-		if res[i].name not in "PRO":
+		if res[i].name != "PRO":
 			######################################################
 			##  Process the N dome								
 			######################################################
@@ -216,10 +216,13 @@ for ts in u.trajectory:
 			processed_cloud = []
 			atom_pattern_N = ''
 			atom_pattern_dist = ''
+			current_res_H_pos = res[i].H.pos
+			x = res[i].N.pos - current_res_H_pos
 			
 			# First round of processing from enhanced atom selection
-			for j in tree.query_ball_point(res[i].H.pos, 5.0):
+			for j in tree.query_ball_point(current_res_H_pos, 5.0):
 				atom = u.residues.atoms[j]
+				atom_pos = atom.pos
 				ref_name = atom.name + atom.resname
 				
 				# Check to ensure backbone atoms within (+/-) 2 residues are not included
@@ -228,8 +231,7 @@ for ts in u.trajectory:
 				else:
 					if ref_name in atom_reference:
 						# Variables for calculating the vector angles of each atom
-						x = res[i].N.pos - res[i].H.pos
-						v = atom.pos - res[i].H.pos
+						v = atom_pos - current_res_H_pos
 
 						# Eliminate any atoms that have vector angles less than 90.0
 						if abs(vangle(x, v)) < 90.0:
@@ -242,13 +244,13 @@ for ts in u.trajectory:
 							##  Other atoms: 	wtihin 2.5 A 					
 							######################################################
 							if atom_reference[ref_name] in "R":
-								cloud.append([atom, distance(atom.pos, res[i].H.pos)])
+								cloud.append([atom, distance(atom_pos, current_res_H_pos)])
 							elif atom_reference[ref_name] in "C":
-								C_dist = distance(atom.pos, res[i].H.pos)
+								C_dist = distance(atom_pos, current_res_H_pos)
 								if C_dist <= 4.0:
 									cloud.append([atom, C_dist])
 							else:
-								dist = distance(atom.pos, res[i].H.pos)
+								dist = distance(atom_pos, current_res_H_pos)
 								if dist <= 2.5:
 									cloud.append([atom, dist])
 			
@@ -264,27 +266,27 @@ for ts in u.trajectory:
 					atom_pattern_dist += "0.000|0.000|0.000|0.000|0.000|"
 				else:
 					# Rank atoms based on the atom type preferences noted above
-					processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],distance(res[i].H.pos, atom[0].pos)))
+					processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],distance(current_res_H_pos, atom[0].pos)))
 					
 					# Generate the atom pattern with their corresponding distances
 					for atom in processed_cloud:
 						atom_pattern_N += atom_reference[atom[0].name + atom[0].resname] + ':'
 						atom_pattern_dist += "{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}|".format(
-							distance(res[i].H.pos,   atom[0].pos),distance(res[i-1].N.pos, atom[0].pos),
-							distance(res[i-2].O.pos, atom[0].pos),distance(res[ i ].O.pos, atom[0].pos),
-							distance(res[i+1].N.pos, atom[0].pos))
+							distance(current_res_H_pos,atom[0].pos),distance(res[i-1].N.pos, atom[0].pos),
+							distance(res[i-2].O.pos,  atom[0].pos),distance(res[ i ].O.pos, atom[0].pos),
+							distance(res[i+1].N.pos,  atom[0].pos))
 
 			# Write the output to the open file
 			open_N_files[f].write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}|{7}\n".format(
 					atom_pattern_N,ts.frame,
-					distance(res[i-1].N.pos, res[i].H.pos),distance(res[i-2].O.pos, res[i].H.pos),
-					distance(res[i-1].O.pos, res[i].H.pos),distance(res[ i ].O.pos, res[i].H.pos),
-					distance(res[i+1].N.pos, res[i].H.pos),atom_pattern_dist))
+					distance(res[i-1].N.pos, current_res_H_pos),distance(res[i-2].O.pos, current_res_H_pos),
+					distance(res[i-1].O.pos, current_res_H_pos),distance(res[ i ].O.pos, current_res_H_pos),
+					distance(res[i+1].N.pos, current_res_H_pos),atom_pattern_dist))
 
 		# Intentionally offset the oxygen output	
 		o = i - 1
 		if (o + 2) < len(res)-1:
-			if res[o].name not in "PRO":
+			if res[i].name != "PRO":
 				######################################################
 				##  Process the O dome								
 				######################################################
@@ -296,10 +298,13 @@ for ts in u.trajectory:
 				processed_cloud = []
 				atom_pattern_O = ''
 				atom_pattern_dist = ''
+				current_res_O_pos = res[o].O.pos
+				x = res[o+1].N.pos - current_res_O_pos
 
 				# First round of processing from enhanced atom selection
-				for j in tree.query_ball_point(res[o].O.pos, 3.9):
+				for j in tree.query_ball_point(current_res_O_pos, 3.9):
 					atom = u.residues.atoms[j]
+					atom_pos = atom.pos
 					ref_name = atom.name + atom.resname
 
 					# Check to ensure backbone atoms within (+/-) 2 residues are not included
@@ -312,15 +317,14 @@ for ts in u.trajectory:
 								continue
 							else:
 								# Variables for calculating the vector angles of each atom
-								x = res[o+1].N.pos - res[o].O.pos
-								v = atom.pos - res[o].O.pos
+								v = atom_pos - current_res_O_pos
 
 								# Eliminate any atoms that have vector angles less than 90.0
 								if abs(vangle(x, v)) < 90.0:
 									continue
 								else:
 									if ref_name in atom_reference:
-										cloud.append([atom, distance(atom.pos, res[o].O.pos)])
+										cloud.append([atom, distance(atom_pos, current_res_O_pos)])
 
 				# Second round of processing
 				if cloud is None:
@@ -334,21 +338,21 @@ for ts in u.trajectory:
 						atom_pattern_dist += "0.000|0.000|0.000|0.000|0.000|"
 					else:
 						# Rank atoms based on the atom type preferences noted above
-						processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],distance(res[o].O.pos, atom[0].pos)))
+						processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],distance(current_res_O_pos, atom[0].pos)))
 						
 						# Generate the atom pattern with their corresponding distances
 						for atom in processed_cloud:
 							atom_pattern_O += atom_reference[atom[0].name + atom[0].resname] + ":"
 							atom_pattern_dist += "{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}|".format(
-								distance(res[o].O.pos,   atom[0].pos),distance(res[o].N.pos,   atom[0].pos),
+								distance(current_res_O_pos,   atom[0].pos),distance(res[o].N.pos,   atom[0].pos),
 								distance(res[o-1].O.pos, atom[0].pos),distance(res[o+1].O.pos, atom[0].pos),
 								distance(res[o+2].N.pos, atom[0].pos))
 				
 				# Write the output to the open file
 				open_O_files[f].write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}|{7}\n".format(
 					atom_pattern_O,ts.frame,
-					distance(res[ o ].N.pos, res[o].O.pos),distance(res[o-1].O.pos, res[o].O.pos),
-					distance(res[o+1].N.pos, res[o].O.pos),distance(res[o+1].O.pos, res[o].O.pos),
-					distance(res[o+2].N.pos, res[o].O.pos),atom_pattern_dist))
+					distance(res[ o ].N.pos, current_res_O_pos),distance(res[o-1].O.pos, current_res_O_pos),
+					distance(res[o+1].N.pos, current_res_O_pos),distance(res[o+1].O.pos, current_res_O_pos),
+					distance(res[o+2].N.pos, current_res_O_pos),atom_pattern_dist))
 
 print "Program time: {0:.3f} seconds.".format(time.time() - start_time)
