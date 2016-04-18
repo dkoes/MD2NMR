@@ -9,11 +9,12 @@ import sys, MDAnalysis
 import math
 import numpy as np
 import time
+import argparse
 from os.path import splitext
 from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
 from scipy import spatial
-import argparse
+from pykdtree.kdtree import KDTree
 
 start_time = time.time()
 
@@ -114,7 +115,6 @@ def vangle(x, v):
 
 	return theta
 
-
 # Determines nearest carbon to current target residue atom, based upon its location of oxygen
 def find_closest_atom(cloud, target_atom):
 	minC = 10000.0
@@ -199,7 +199,8 @@ for ts in u.trajectory:
 	
 	print "\nProcessing frame #: " + str(ts.frame)
 
-	tree = spatial.KDTree([x.pos for x in u.residues.atoms])
+	#tree = spatial.KDTree([x.pos for x in u.residues.atoms])
+	tree = spatial.cKDTree(np.array([x.pos for x in u.residues.atoms]))
 	
 	# Simultaneously iterate through each residue and corresponding open file
 	for i, f in zip(range(2, len(res)-2), range(0, len(open_O_files))):
