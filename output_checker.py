@@ -36,7 +36,7 @@ for i in range(0, len(new_filenames)):
 		if orig_atom_pattern == new_atom_pattern:
 			for d in range(0, len(new_dists)):
 				# Pattern matched, but conflicting distances
-				if abs(float(orig_dists[d]) - float(new_dists[d])) > 0.01:
+				if abs(float(orig_dists[d]) - float(new_dists[d])) > 0.02:
 					print new_filenames[i] + " Frame #: " + orig_frame_num + " wrong distance, nmrdump: " + orig_dists[d] + " new: " + new_dists[d]
 				else:
 					continue
