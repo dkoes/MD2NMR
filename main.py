@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 # Script that analyzes a molecular dynamics simulation for experimental validation.
-# Original takes 25.55 seconds and 2GB of RAM to do one residue
 
 import cProfile
 import pstats, os
@@ -26,7 +25,7 @@ parser.add_argument("-r","--residues", help="space deliminated residues to compu
 parser.add_argument("--start",help="frame to start on",type=int,default=0)
 parser.add_argument("--end",help="frame to end at",type=int,default=-1)
 parser.add_argument("--flush",help="flush I/O as it is written",action='store_true')
-
+parser.add_argument("--outputdir",help="directory in which to put DUMP files",default="output")
 args = parser.parse_args()
 
 # Set up universe, selections and data structures
@@ -211,14 +210,14 @@ def find_closest_atom(cloud, target_atom):
 open_O_files = []
 open_N_files = []
 
-if not os.path.exists('output'):
-	os.makedirs('output')
+if not os.path.exists(args.outputdir):
+	os.makedirs(args.outputdir)
 
 # Open all files at the beginning
 for r in residues:
 	i = r.id
-	file_name_O = 'output/DUMP.O.%d' % i
-	file_name_N = 'output/DUMP.N.%d' % i
+	file_name_O = '%s/DUMP.O.%d' % (args.outputdir,i)
+	file_name_N = '%s/DUMP.N.%d' % (args.outputdir,i)
 	
 	f_O = open(file_name_O,'w')
 	f_N = open(file_name_N,'w')
@@ -254,6 +253,10 @@ for ts in u.trajectory[args.start:end]:
 		atom_pattern_dist = ''
 		current_res_H_pos = r.H.pos
 		x = r.N.pos - current_res_H_pos
+		res_i_O_pos = res[ i ].O.pos
+		res_i_m1_N_pos = res[i-1].N.pos
+		res_i_p1_N_pos = res[i+1].N.pos
+		res_i_m2_O_pos = res[i-2].O.pos
 		
 		# First round of processing from enhanced atom selection
 		for j in tree.query_ball_point(current_res_H_pos, 5.0):
@@ -302,21 +305,22 @@ for ts in u.trajectory[args.start:end]:
 				atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
 			else:
 				# Rank atoms based on the atom type preferences noted above
-				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],distance(current_res_H_pos, atom[0].pos)))
+				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],atom[1]))				
 				
 				# Generate the atom pattern with their corresponding distances
 				for atom in processed_cloud:
 					atom_pattern_N += atom_reference[atom[0].name + atom[0].resname] + ':'
+					apos = atom[0].pos
 					atom_pattern_dist += "|{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}".format(
-						distance(current_res_H_pos,atom[0].pos),distance(res[i-1].N.pos, atom[0].pos),
-						distance(res[i-2].O.pos,  atom[0].pos),distance(res[ i ].O.pos, atom[0].pos),
-						distance(res[i+1].N.pos,  atom[0].pos))
+						distance(current_res_H_pos, apos),distance(res_i_m1_N_pos, apos),
+						distance(res_i_m2_O_pos, apos),distance(res_i_O_pos, apos),
+						distance(res_i_p1_N_pos, apos))
 
 		# Write the output to the open file
 		Nfile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}{7}\n".format(
 				atom_pattern_N,ts.frame,
-				distance(res[i-1].N.pos, current_res_H_pos),distance(res[i-2].O.pos, current_res_H_pos),
-				distance(res[i-1].O.pos, current_res_H_pos),distance(res[ i ].O.pos, current_res_H_pos),
+				distance(res_i_m1_N_pos, current_res_H_pos),distance(res_i_m2_O_pos, current_res_H_pos),
+				distance(res[i-1].O.pos, current_res_H_pos),distance(res_i_O_pos, current_res_H_pos),
 				distance(res[i+1].N.pos, current_res_H_pos),atom_pattern_dist))
 		if args.flush: Nfile.flush()
 		# Intentionally offset the oxygen output	
@@ -334,7 +338,11 @@ for ts in u.trajectory[args.start:end]:
 		atom_pattern_dist = ''
 		current_res_O_pos = res[o].O.pos
 		x = res[o+1].N.pos - current_res_O_pos
-
+		res_o_N_pos = res[ o ].N.pos
+		res_o_m1_O_pos = res[o-1].O.pos
+		res_o_p1_O_pos = res[o+1].O.pos
+		res_o_p2_N_pos = res[o+2].N.pos
+		
 		# First round of processing from enhanced atom selection
 		for j in tree.query_ball_point(current_res_O_pos, 3.9):
 			atom = u.atoms[j]
@@ -372,22 +380,23 @@ for ts in u.trajectory[args.start:end]:
 				atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
 			else:
 				# Rank atoms based on the atom type preferences noted above
-				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],distance(current_res_O_pos, atom[0].pos)))
+				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]], atom[1]))
 				
 				# Generate the atom pattern with their corresponding distances
 				for atom in processed_cloud:
 					atom_pattern_O += atom_reference[atom[0].name + atom[0].resname] + ":"
+					apos = atom[0].pos
 					atom_pattern_dist += "|{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}".format(
-						distance(current_res_O_pos,   atom[0].pos),distance(res[o].N.pos,   atom[0].pos),
-						distance(res[o-1].O.pos, atom[0].pos),distance(res[o+1].O.pos, atom[0].pos),
-						distance(res[o+2].N.pos, atom[0].pos))
+						distance(current_res_O_pos,   apos),distance(res_o_N_pos,   apos),
+						distance(res_o_m1_O_pos, apos),distance(res_o_p1_O_pos, apos),
+						distance(res_o_p2_N_pos, apos))
 		
 		# Write the output to the open file
 		Ofile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}{7}\n".format(
 			atom_pattern_O,ts.frame,
-			distance(res[ o ].N.pos, current_res_O_pos),distance(res[o-1].O.pos, current_res_O_pos),
-			distance(res[o+1].N.pos, current_res_O_pos),distance(res[o+1].O.pos, current_res_O_pos),
-			distance(res[o+2].N.pos, current_res_O_pos),atom_pattern_dist))
+			distance(res_o_N_pos, current_res_O_pos),distance(res_o_m1_O_pos, current_res_O_pos),
+			distance(res[o+1].N.pos, current_res_O_pos),distance(res_o_p1_O_pos, current_res_O_pos),
+			distance(res_o_p2_N_pos, current_res_O_pos),atom_pattern_dist))
 		if args.flush: Ofile.flush()
 
 
