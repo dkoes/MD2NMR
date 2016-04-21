@@ -235,7 +235,7 @@ for ts in u.trajectory[args.start:end]:
 	print "Processing frame #: " + str(ts.frame)
 
 	# Load this frame into a spatial cKDTree for fast nearest-neighbor search
-	tree = spatial.cKDTree(np.array([x.pos for x in u.residues.atoms]))
+	tree = spatial.cKDTree(np.array([x.pos for x in u.atoms]))
 	
 	# Simultaneously iterate through each residue and corresponding open file
 	for r, Nfile, Ofile in zip(residues, open_N_files, open_O_files):
@@ -257,7 +257,7 @@ for ts in u.trajectory[args.start:end]:
 		
 		# First round of processing from enhanced atom selection
 		for j in tree.query_ball_point(current_res_H_pos, 5.0):
-			atom = u.residues.atoms[j]
+			atom = u.atoms[j]
 			atom_pos = atom.pos
 			ref_name = atom.name + atom.resname
 			
@@ -337,7 +337,7 @@ for ts in u.trajectory[args.start:end]:
 
 		# First round of processing from enhanced atom selection
 		for j in tree.query_ball_point(current_res_O_pos, 3.9):
-			atom = u.residues.atoms[j]
+			atom = u.atoms[j]
 			atom_pos = atom.pos
 			ref_name = atom.name + atom.resname
 
