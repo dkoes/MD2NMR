@@ -232,7 +232,7 @@ if end < 0: end = u.trajectory.n_frames
 # Iterate through each desired frame
 for ts in u.trajectory[args.start:end]:
 	
-	print "\nProcessing frame #: " + str(ts.frame)
+	print "Processing frame #: " + str(ts.frame)
 
 	# Load this frame into a spatial cKDTree for fast nearest-neighbor search
 	tree = spatial.cKDTree(np.array([x.pos for x in u.residues.atoms]))
