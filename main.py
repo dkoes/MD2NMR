@@ -44,7 +44,7 @@ if args.residues:
 else:
 	for (i,r) in enumerate(res):
 		if i >= startch+2:
-			if 'OXT' in r.names and len(residues) > 0: #end of chain
+			if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
 				residues.pop() #remove previous residue
 				startch = i+1 #update start of chain			
 			elif r.name != 'PRO':
