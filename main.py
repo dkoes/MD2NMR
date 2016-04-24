@@ -38,17 +38,34 @@ res = prot.atoms.residues
 #identify residues of interest
 startch = 0
 residues = []
+
+#store N and C terminals
+isNT = set()
+isCT = set()
+
+def addindex(s, r, aname):
+	if aname in r.names:
+		s.add(r[aname].index)
+
+for (i,r) in enumerate(res):
+	if i == startch:
+		addindex(isNT, r, 'N')
+	if i >= startch+2:
+		if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
+			addindex(isCT, r, 'OXT')
+			addindex(isCT, r, 'OT1')
+			addindex(isCT, r, 'OT2')
+			addindex(isCT, r, 'O')
+			
+			residues.pop() #remove previous residue
+			startch = i+1 #update start of chain			
+		elif r.name != 'PRO':
+			residues.append(r)
+
 if args.residues:
+	residues = [] #override with user specified
 	for r in args.residues:
 		residues.append(res[int(r)-1])
-else:
-	for (i,r) in enumerate(res):
-		if i >= startch+2:
-			if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
-				residues.pop() #remove previous residue
-				startch = i+1 #update start of chain			
-			elif r.name != 'PRO':
-				residues.append(r)
 			
 # Dictionary that maps atom names to groups
 atom_reference = {
@@ -109,6 +126,19 @@ atom_ranking = {
 	"B": 8, "G": 9, "P":10, "M": 11, "Z": 12, "U": 13, "C": 14
 }
 
+def atom_to_pattern(atom):
+	#treat N-term and C-term specially
+	if atom.index in isNT:
+		return 'B'
+	elif atom.index in isCT:
+		return 'A'
+	name = atom.name + atom.resname
+	if name in atom_reference:
+		return atom_reference[name]
+	else:
+		return None
+	
+
 ######################################################################################################################
 ## Helper functions - calculate distance function, find closest atoms, etc.                                         ##
 ######################################################################################################################
@@ -160,10 +190,10 @@ def find_closest_atom(cloud, target_atom):
 	
 	# Classifies carbon and oxygen atom types
 	for atom in cloud:
-		ref_name = atom[0].name + atom[0].resname
-		if atom_reference[ref_name] == 'C':
+		ref_name = atom_to_pattern(atom[0])
+		if ref_name == 'C':
 			carbons.append(atom)
-		elif atom[0].name == 'O' and atom_reference[ref_name] == 'O':
+		elif atom[0].name == 'O' and ref_name == 'O':
 			oxygens.append(atom)
 		else:
 			other_atoms.append(atom)
@@ -263,13 +293,13 @@ for ts in u.trajectory[args.start:end]:
 		for j in tree.query_ball_point(current_res_H_pos, 5.0):
 			atom = notH.atoms[j]
 			atom_pos = atom.pos
-			ref_name = atom.name + atom.resname
+			ref_name = atom_to_pattern(atom) 
 			
 			# Check to ensure backbone atoms within (+/-) 2 residues are not included
 			if atom.name in bb_atoms and abs(r.id - atom.resid) < 3 or atom.index == 0:
 				continue 
 			else:
-				if ref_name in atom_reference:
+				if ref_name:
 					# Variables for calculating the vector angles of each atom
 					v = atom_pos - current_res_H_pos
 
@@ -283,16 +313,14 @@ for ts in u.trajectory[args.start:end]:
 						##  Carbon atoms: 	within 4.0 A 					
 						##  Other atoms: 	wtihin 2.5 A 					
 						######################################################
-						if atom_reference[ref_name] in "R":
-							cloud.append([atom, distance(atom_pos, current_res_H_pos)])
-						elif atom_reference[ref_name] in "C":
-							C_dist = distance(atom_pos, current_res_H_pos)
-							if C_dist <= 4.0:
-								cloud.append([atom, C_dist])
-						else:
-							dist = distance(atom_pos, current_res_H_pos)
-							if dist <= 2.5:
+						dist = distance(atom_pos, current_res_H_pos)
+						if ref_name == "R":
+							cloud.append([atom, dist])
+						elif ref_name == "C":
+							if dist <= 4.0:
 								cloud.append([atom, dist])
+						elif dist <= 2.5:
+							cloud.append([atom, dist])
 		
 		# Second round of processing					
 		if cloud is None:
@@ -306,11 +334,11 @@ for ts in u.trajectory[args.start:end]:
 				atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
 			else:
 				# Rank atoms based on the atom type preferences noted above
-				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]],atom[1]))				
+				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_to_pattern(atom[0])],atom[1]))				
 				
 				# Generate the atom pattern with their corresponding distances
 				for atom in processed_cloud:
-					atom_pattern_N += atom_reference[atom[0].name + atom[0].resname] + ':'
+					atom_pattern_N += atom_to_pattern(atom[0]) + ':'
 					apos = atom[0].pos
 					atom_pattern_dist += "|{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}".format(
 						distance(current_res_H_pos, apos),distance(res_i_m1_N_pos, apos),
@@ -348,15 +376,15 @@ for ts in u.trajectory[args.start:end]:
 		for j in tree.query_ball_point(current_res_O_pos, 3.9):
 			atom = notH.atoms[j]
 			atom_pos = atom.pos
-			ref_name = atom.name + atom.resname
+			ref_name = atom_to_pattern(atom)
 
 			# Check to ensure backbone atoms within (+/-) 2 residues are not included
 			if atom.name in bb_atoms and abs(res[o].id - atom.resid) < 3 or atom.index == 0:
 				continue
 			else:
-				if ref_name in atom_reference:
+				if ref_name:
 					# Eliminate all Carbon atoms
-					if "C" in atom_reference[ref_name]:
+					if "C" == ref_name:
 						continue
 					else:
 						# Variables for calculating the vector angles of each atom
@@ -365,8 +393,7 @@ for ts in u.trajectory[args.start:end]:
 						# Eliminate any atoms that have vector angles less than 90.0
 						if abs(vangle(x, v)) < 90.0:
 							continue
-						else:
-							if ref_name in atom_reference:
+						elif ref_name:
 								cloud.append([atom, distance(atom_pos, current_res_O_pos)])
 
 		# Second round of processing
@@ -381,11 +408,11 @@ for ts in u.trajectory[args.start:end]:
 				atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
 			else:
 				# Rank atoms based on the atom type preferences noted above
-				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_reference[atom[0].name + atom[0].resname]], atom[1]))
+				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_to_pattern(atom[0])], atom[1]))
 				
 				# Generate the atom pattern with their corresponding distances
 				for atom in processed_cloud:
-					atom_pattern_O += atom_reference[atom[0].name + atom[0].resname] + ":"
+					atom_pattern_O += atom_to_pattern(atom[0]) + ":"
 					apos = atom[0].pos
 					atom_pattern_dist += "|{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}".format(
 						distance(current_res_O_pos,   apos),distance(res_o_N_pos,   apos),
