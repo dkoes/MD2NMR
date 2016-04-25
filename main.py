@@ -69,23 +69,23 @@ if args.residues:
 			
 # Dictionary that maps atom names to groups
 atom_reference = {
-"NALA": "N", "NARG": "N", "NASN": "N", "NASP": "N", "NCYS": "N", "NGLN": "N", "NGLY": "N", "NGLU": "N", "NHIS": "N", "NHIE": "N", "NHIP": "N",
+"NALA": "N", "NARG": "N", "NASN": "N", "NASP": "N", "NCYS": "N","NCYX": "N", "NGLN": "N", "NGLY": "N", "NGLU": "N", "NHIS": "N","NHID": "N", "NHIE": "N", "NHIP": "N",
 "NHSD": "N", "NHSE": "N", "NHSP": "N", "NILE": "N", "NLEU": "N", "NLYS": "N", "NMET": "N", "NPHE": "N",
 "NPRO": "N", "NSER": "N", "NTHR": "N", "NTRP": "N", "NTYR": "N", "NVAL": "N",
 
-"OALA": "O", "OARG": "O", "OASN": "O", "OASP": "O", "OCYS": "O", "OGLN": "O", "OGLY":   "O", "OGLU":   "O", "OHIS": "O", "OHIE": "O", "OHIP": "O",
+"OALA": "O", "OARG": "O", "OASN": "O", "OASP": "O", "OCYS": "O", "OCYX": "O", "OGLN": "O", "OGLY":   "O", "OGLU":   "O", "OHIS": "O","OHID": "O", "OHIE": "O", "OHIP": "O",
 "OHSD": "O", "OHSE": "O", "OHSP": "O", "OILE": "O", "OLEU": "O", "OLYS": "O", "OMET":   "O", "OPHE":   "O",
 "OPRO": "O", "OSER": "O", "OTHR": "O", "OTRP": "O", "OTYR": "O", "OVAL": "O", "OD1ASN": "O", "OE1GLN": "O",
 
 "OH2TIP3": "W", "OWAT": "W",
 
-"CD1PHE": "R", "CD1TRP": "R", "CD1TYR": "R", "CD2HSD": "R", "CD2HSE": "R", "CD2HSP": "R",  "CD2HIS": "R", "CD2HIE": "R", "CD2HIP": "R",
-"CD2PHE": "R", "CD2TRP": "R", "CD2TYR": "R", "CE1HSD": "R", "CE1HSE": "R", "CE1HSP": "R", "CE1HIS": "R", "CE1HIE": "R", "CE1HIP": "R",
+"CD1PHE": "R", "CD1TRP": "R", "CD1TYR": "R", "CD2HSD": "R", "CD2HSE": "R", "CD2HSP": "R",  "CD2HIS": "R","CD2HID": "R", "CD2HIE": "R", "CD2HIP": "R",
+"CD2PHE": "R", "CD2TRP": "R", "CD2TYR": "R", "CE1HSD": "R", "CE1HSE": "R", "CE1HSP": "R", "CE1HIS": "R","CE1HID": "R", "CE1HIE": "R", "CE1HIP": "R",
 "CE1PHE": "R", "CE1TYR": "R", "CE2PHE": "R", "CE2TRP": "R", "CE2TYR": "R", "CE3TRP": "R",
-"CGHSD":  "R", "CGHSE":  "R", "CGHSP":  "R", "CGHIS":  "R", "CGHIE":  "R", "CGHIP":  "R", "CGPHE":  "R", "CGTRP":  "R", "CGTYR":  "R",
+"CGHSD":  "R", "CGHSE":  "R", "CGHSP":  "R", "CGHIS":  "R","CGHID":  "R", "CGHIE":  "R", "CGHIP":  "R", "CGPHE":  "R", "CGTRP":  "R", "CGTYR":  "R",
 "CH2TRP": "R", "CZ2TRP": "R", "CZ3TRP": "R", "CZPHE":  "R", "CZTYR":  "R", "ND1HSD": "R",
-"ND1HSE": "R", "ND1HSP": "R", "ND1HIS": "R", "ND1HIE": "R", "ND1HIP": "R",
-"NE1TRP": "R", "NE2HSD": "R", "NE2HSE": "R", "NE2HSP": "R", "NE2HIS": "R", "NE2HIE": "R", "NE2HIP": "R",
+"ND1HSE": "R", "ND1HSP": "R", "ND1HIS": "R","ND1HID": "R", "ND1HIE": "R", "ND1HIP": "R",
+"NE1TRP": "R", "NE2HSD": "R", "NE2HSE": "R", "NE2HSP": "R", "NE2HIS": "R","NE2HID": "R", "NE2HIE": "R", "NE2HIP": "R",
 
 "OG1THR": "L", "OGSER":  "L", "OHTYR":  "L", "OD2ASPH": "L", "OE2GLUH": "L", 
 
@@ -94,8 +94,8 @@ atom_reference = {
 "SDMET":  "S", "SGCYS":  "S", "SGCYX": "S",
 
 "OD1ASP": "A", "OD2ASP": "A", "OE1GLU": "A", "OE2GLU": "A", "OT1ALA": "A", "OT1ARG": "A", "OT1ASN": "A", 
-"OT1ASP": "A", "OT1CYS": "A", "OT1GLN": "A", "OT1GLY": "A", "OT1GLU": "A", "OT1HSD": "A", "OT1HSE": "A", 
-"OT1HSP": "A", "OT1HIS": "A", "OT1HIE": "A", "OT1HIP": "A",
+"OT1ASP": "A", "OT1CYS": "A","OT1CYX": "A", "OT1GLN": "A", "OT1GLY": "A", "OT1GLU": "A", "OT1HSD": "A", "OT1HSE": "A", 
+"OT1HSP": "A", "OT1HIS": "A", "OT1HID": "A", "OT1HIE": "A", "OT1HIP": "A",
  "OT1ILE": "A", "OT1LEU": "A", "OT1LYS": "A", "OT1MET": "A", "OT1PHE": "A", "OT1PRO": "A", 
 "OT1SER": "A", "OT1THR": "A", "OT1TRP": "A", "OT1TYR": "A", "OT1VAL": "A",
 
@@ -103,19 +103,20 @@ atom_reference = {
 
 "NEARG": "G", "NH1ARG": "G", "NH2ARG": "G", 
 
-"SODSOD": "P", 
-"Na+Na+": "P", 
+#we intentionally ignore ions!
+#"SODSOD": "P", 
+#"Na+Na+": "P", 
 
-"CLACLA": "M",
-"Cl-Cl-": "M",
+#"CLACLA": "M",
+#"Cl-Cl-": "M",
 
 "Z": "Z", 
 
 "OD1ASPH": "U", "OE1GLUH": "U", 
 "OD1ASH": "U", "OE1GLH": "U", 
 
-"CALA": "C", "CARG": "C", "CASN": "C", "CASP": "C", "CCYS": "C", "CGLN": "C", "CGLY": "C", "CGLU": "C", 
-"CHSD": "C", "CHSE": "C", "CHSP": "C","CHIS": "C", "CHIE": "C", "CHIP": "C",
+"CALA": "C", "CARG": "C", "CASN": "C", "CASP": "C", "CCYS": "C","CCYX": "C", "CGLN": "C", "CGLY": "C", "CGLU": "C", 
+"CHSD": "C", "CHSE": "C", "CHSP": "C","CHIS": "C", "CHID": "C", "CHIE": "C", "CHIP": "C",
 "CILE": "C", "CLEU": "C", "CLYS": "C", "CMET": "C", "CPHE": "C", 
 "CPRO": "C", "CSER": "C", "CTHR": "C", "CTRP": "C", "CTYR": "C", "CVAL": "C"
 }
@@ -294,7 +295,6 @@ for ts in u.trajectory[args.start:end]:
 			atom = notH.atoms[j]
 			atom_pos = atom.pos
 			ref_name = atom_to_pattern(atom) 
-			
 			# Check to ensure backbone atoms within (+/-) 2 residues are not included
 			if atom.name in bb_atoms and abs(r.id - atom.resid) < 3 or atom.index == 0:
 				continue 
@@ -314,6 +314,7 @@ for ts in u.trajectory[args.start:end]:
 						##  Other atoms: 	wtihin 2.5 A 					
 						######################################################
 						dist = distance(atom_pos, current_res_H_pos)
+						
 						if ref_name == "R":
 							cloud.append([atom, dist])
 						elif ref_name == "C":
