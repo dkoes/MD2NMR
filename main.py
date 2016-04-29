@@ -50,14 +50,13 @@ def addindex(s, r, aname):
 for (i,r) in enumerate(res):
 	if i == startch:
 		addindex(isNT, r, 'N')
-	if i >= startch+1:
+	if i >= startch+2:
 		if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
 			addindex(isCT, r, 'OXT')
 			addindex(isCT, r, 'OT1')
 			addindex(isCT, r, 'OT2')
 			addindex(isCT, r, 'O')
 			
-			residues.pop() #remove previous residue
 			startch = i+1 #update start of chain			
 		elif r.name != 'PRO':
 			residues.append(r)
