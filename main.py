@@ -296,7 +296,7 @@ for ts in u.trajectory[args.start:end]:
 			atom_pos = atom.pos
 			ref_name = atom_to_pattern(atom) 
 			# Check to ensure backbone atoms within (+/-) 2 residues are not included
-			if atom.name in bb_atoms and abs(r.id - atom.resid) < 3 or atom.index == 0:
+			if atom.name in bb_atoms and abs(r.id - atom.resid) < 3:
 				continue 
 			else:
 				if ref_name:
@@ -380,7 +380,7 @@ for ts in u.trajectory[args.start:end]:
 			ref_name = atom_to_pattern(atom)
 
 			# Check to ensure backbone atoms within (+/-) 2 residues are not included
-			if atom.name in bb_atoms and abs(res[o].id - atom.resid) < 3 or atom.index == 0:
+			if atom.name in bb_atoms and abs(res[o].id - atom.resid) < 3:
 				continue
 			else:
 				if ref_name:
