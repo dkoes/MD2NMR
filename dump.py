@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Script that analyzes a molecular dynamics simulation for experimental validation.
 
@@ -247,8 +247,8 @@ if not os.path.exists(args.outputdir):
 # Open all files at the beginning
 for r in residues:
 	i = r.id
-	file_name_O = '%s/DUMP.O.%d' % (args.outputdir,i)
-	file_name_N = '%s/DUMP.N.%d' % (args.outputdir,i)
+	file_name_O = '%s/%s.O.%d' % (args.outputdir,r.name,i)
+	file_name_N = '%s/%s.N.%d' % (args.outputdir,r.name,i)
 	
 	f_O = open(file_name_O,'w')
 	f_N = open(file_name_N,'w')
