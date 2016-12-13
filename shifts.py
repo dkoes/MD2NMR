@@ -11,18 +11,18 @@ import multiprocessing
 from multiprocessing import Pool
 
 
-def shifts_from_file(db,fname,resname,thresholds,verbose):
+def shifts_from_file(db,fname,resname,args,verbose):
     '''return summary statistics for a file'''
     ndata = shiftres.read_resdump(fname)
     oname = fname.replace('.N.','.O.')
     odata = shiftres.read_resdump(oname)
-    shifts = np.array(shiftres.compute_shifts(db[resname],ndata,odata,thresholds,verbose))[:,1:]
+    shifts = np.array(shiftres.compute_shifts(db[resname],ndata,odata,args,verbose))[:,1:]
     means = shifts.mean(axis=0)
     stds = shifts.std(axis=0)
     return (means,stds)
 
 def thread_call(a):
-    return shifts_from_file(db,a[0],a[2],thresholds,args.verbose)
+    return shifts_from_file(db,a[0],a[2],args,args.verbose)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -32,13 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--resmap',help='file containing mapping from resid to resname',default='')
     parser.add_argument('-v','--verbose',help='output informative messages',action='store_true')
     parser.add_argument('--cpus',help='number of cores to use',default=multiprocessing.cpu_count())
-    shiftres.set_default_threshold_args(parser)
-        
+    shiftres.add_shift_args(parser)
     args = parser.parse_args()
-
-    thresholds = {'N': (args.Nmin,args.Nmax),
-                  'H': (args.Hmin,args.Hmax),
-                  'C': (args.Cmin,args.Cmax)}
     
     db = shiftres.read_db(args.database)
     
@@ -49,7 +44,7 @@ if __name__ == '__main__':
             (i,resn) = line.split()
             resmap[int(i)] = resn
         
-    files = glob.glob('%s/*.N.*'%args.inputdir)
+    files = glob.glob('%s/*.N.*[0-9]'%args.inputdir)
     #setup inputs for parallel processing
     inputs = []
     for fname in files:
