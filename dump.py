@@ -188,12 +188,10 @@ def find_closest_atom(cloud, target_atom):
 	return nearest_atoms
 
 
-def process_frame(u, residues):
+def process_frame(u, residues, prot, notH):
 	'''Calculate distance descriptors for all requested residues of the current
-	frame of a molecular dynamics simulation'''
+	frame of a molecular dynamics simulation. Provide selections of the protein atoms and all notH atoms'''
 	
-	prot = u.select_atoms("protein")
-	notH = u.select_atoms("not (name H*)")
 	bb_atoms = ["N", "O"]
 	res = prot.atoms.residues
 	
@@ -436,10 +434,13 @@ if __name__ == '__main__':
 	
 	# Iterate through each desired frame
 	resandfiles = zip(residues, open_N_files, open_O_files)
+	prot = u.select_atoms("protein")
+	notH = u.select_atoms("not (name H*)")
+	
 	for ts in u.trajectory[args.start:end]:
 		
 		print "Processing frame #: " + str(ts.frame)
-		resdata = process_frame(u, residues)
+		resdata = process_frame(u, residues, prot, notH)
 		for r, Nfile, Ofile in resandfiles:
 			i = r.id-1;
 			assert res[i] == r
