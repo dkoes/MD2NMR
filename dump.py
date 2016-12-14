@@ -15,56 +15,11 @@ from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
 from scipy import spatial
 
-start_time = time.time()
-
-# User-friendly argument handling
-parser = argparse.ArgumentParser()
-parser.add_argument("topology_filename",   help="input file with (.prmtop) extension")
-parser.add_argument("trajectory_filename", help="input file with (.dcd) extension")
-parser.add_argument("-r","--residues", help="space deliminated residues to compute (all if unspecified)",nargs='*')
-parser.add_argument("--start",help="frame to start on",type=int,default=0)
-parser.add_argument("--end",help="frame to end at",type=int,default=-1)
-parser.add_argument("--flush",help="flush I/O as it is written",action='store_true')
-parser.add_argument("--outputdir",help="directory in which to put DUMP files",default="output")
-args = parser.parse_args()
-
-# Set up universe, selections and data structures
-u = MDAnalysis.Universe(args.topology_filename, args.trajectory_filename)
-prot = u.select_atoms("protein")
-notH = u.select_atoms("not (name H*)")
-bb_atoms = ["N", "O"]
-res = prot.atoms.residues
-
-#identify residues of interest
-startch = 0
-residues = []
-
-#store N and C terminals
-isNT = set()
-isCT = set()
 
 def addindex(s, r, aname):
 	if aname in r.names:
 		s.add(r[aname].index)
 
-for (i,r) in enumerate(res):
-	if i == startch:
-		addindex(isNT, r, 'N')
-	if i >= startch+2:
-		if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
-			addindex(isCT, r, 'OXT')
-			addindex(isCT, r, 'OT1')
-			addindex(isCT, r, 'OT2')
-			addindex(isCT, r, 'O')
-			
-			startch = i+1 #update start of chain			
-		elif r.name != 'PRO':
-			residues.append(r)
-
-if args.residues:
-	residues = [] #override with user specified
-	for r in args.residues:
-		residues.append(res[int(r)-1])
 			
 # Dictionary that maps atom names to groups
 atom_reference = {
@@ -233,42 +188,21 @@ def find_closest_atom(cloud, target_atom):
 	return nearest_atoms
 
 
-######################################################################################################################
-## Main code - opens all files, iterates through each timestep once while iterating through residues.               ##
-######################################################################################################################
-
-# Holds all open files
-open_O_files = []
-open_N_files = []
-
-if not os.path.exists(args.outputdir):
-	os.makedirs(args.outputdir)
-
-# Open all files at the beginning
-for r in residues:
-	i = r.id
-	file_name_O = '%s/%s.O.%d' % (args.outputdir,r.name,i)
-	file_name_N = '%s/%s.N.%d' % (args.outputdir,r.name,i)
+def process_frame(u, residues):
+	'''Calculate distance descriptors for all requested residues of the current
+	frame of a molecular dynamics simulation'''
 	
-	f_O = open(file_name_O,'w')
-	f_N = open(file_name_N,'w')
+	prot = u.select_atoms("protein")
+	notH = u.select_atoms("not (name H*)")
+	bb_atoms = ["N", "O"]
+	res = prot.atoms.residues
 	
-	open_O_files.append(f_O)
-	open_N_files.append(f_N)
-
-end = args.end
-if end < 0: end = u.trajectory.n_frames
-
-# Iterate through each desired frame
-for ts in u.trajectory[args.start:end]:
-	
-	print "Processing frame #: " + str(ts.frame)
-
 	# Load this frame into a spatial cKDTree for fast nearest-neighbor search
 	tree = spatial.cKDTree(np.array([x.pos for x in notH.atoms]))
 	
+	ret = dict() #indexed by resid
 	# Simultaneously iterate through each residue and corresponding open file
-	for r, Nfile, Ofile in zip(residues, open_N_files, open_O_files):
+	for r in residues:
 		i = r.id-1;
 		assert res[i] == r
 		######################################################
@@ -281,7 +215,7 @@ for ts in u.trajectory[args.start:end]:
 		cloud = []
 		processed_cloud = []
 		atom_pattern_N = ''
-		atom_pattern_dist = ''
+		atom_pattern_dist = []
 		current_res_H_pos = r.H.pos
 		x = r.N.pos - current_res_H_pos
 		res_i_O_pos = res[ i ].O.pos
@@ -325,13 +259,13 @@ for ts in u.trajectory[args.start:end]:
 		# Second round of processing					
 		if cloud is None:
 			atom_pattern_N = "Z:"
-			atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
+			atom_pattern_dist += [0.0,0.0,0.0,0.0,0.0]
 		else:
 			processed_cloud = find_closest_atom(cloud, res[i].H)
 	
 			if processed_cloud == None:
 				atom_pattern_N = "Z:"
-				atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
+				atom_pattern_dist += [0.0,0.0,0.0,0.0,0.0]
 			else:
 				# Rank atoms based on the atom type preferences noted above
 				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_to_pattern(atom[0])],atom[1]))				
@@ -340,18 +274,17 @@ for ts in u.trajectory[args.start:end]:
 				for atom in processed_cloud:
 					atom_pattern_N += atom_to_pattern(atom[0]) + ':'
 					apos = atom[0].pos
-					atom_pattern_dist += "|{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}".format(
+					atom_pattern_dist += [
 						distance(current_res_H_pos, apos),distance(res_i_m1_N_pos, apos),
 						distance(res_i_m2_O_pos, apos),distance(res_i_O_pos, apos),
-						distance(res_i_p1_N_pos, apos))
+						distance(res_i_p1_N_pos, apos)]
 
 		# Write the output to the open file
-		Nfile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}{7}\n".format(
-				atom_pattern_N,ts.frame,
+		nvals = [atom_pattern_N,ts.frame,
 				distance(res_i_m1_N_pos, current_res_H_pos),distance(res_i_m2_O_pos, current_res_H_pos),
 				distance(res[i-1].O.pos, current_res_H_pos),distance(res_i_O_pos, current_res_H_pos),
-				distance(res[i+1].N.pos, current_res_H_pos),atom_pattern_dist))
-		if args.flush: Nfile.flush()
+				distance(res[i+1].N.pos, current_res_H_pos)] + atom_pattern_dist
+		
 		# Intentionally offset the oxygen output	
 		o = i - 1
 		######################################################
@@ -364,7 +297,7 @@ for ts in u.trajectory[args.start:end]:
 		cloud = []
 		processed_cloud = []
 		atom_pattern_O = ''
-		atom_pattern_dist = ''
+		atom_pattern_dist = []
 		current_res_O_pos = res[o].O.pos
 		x = res[o+1].N.pos - current_res_O_pos
 		res_o_N_pos = res[ o ].N.pos
@@ -399,13 +332,13 @@ for ts in u.trajectory[args.start:end]:
 		# Second round of processing
 		if cloud is None:
 			atom_pattern_O = "Z:"
-			atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
+			atom_pattern_dist += [0.0,0.0,0.0,0.0,0.0]
 		else:
 			processed_cloud = find_closest_atom(cloud, res[o].O)
 	
 			if processed_cloud == None or len(processed_cloud) < 1:
 				atom_pattern_O = "Z:"
-				atom_pattern_dist += "|0.000|0.000|0.000|0.000|0.000"
+				atom_pattern_dist += [0.0,0.0,0.0,0.0,0.0]
 			else:
 				# Rank atoms based on the atom type preferences noted above
 				processed_cloud.sort(key = lambda atom: (atom_ranking[atom_to_pattern(atom[0])], atom[1]))
@@ -414,18 +347,117 @@ for ts in u.trajectory[args.start:end]:
 				for atom in processed_cloud:
 					atom_pattern_O += atom_to_pattern(atom[0]) + ":"
 					apos = atom[0].pos
-					atom_pattern_dist += "|{0:.3f}|{1:.3f}|{2:.3f}|{3:.3f}|{4:.3f}".format(
-						distance(current_res_O_pos,   apos),distance(res_o_N_pos,   apos),
+					atom_pattern_dist += [distance(current_res_O_pos,   apos),distance(res_o_N_pos,   apos),
 						distance(res_o_m1_O_pos, apos),distance(res_o_p1_O_pos, apos),
-						distance(res_o_p2_N_pos, apos))
+						distance(res_o_p2_N_pos, apos)]
 		
 		# Write the output to the open file
-		Ofile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}{7}\n".format(
-			atom_pattern_O,ts.frame,
+		ovals = [atom_pattern_O,ts.frame,
 			distance(res_o_N_pos, current_res_O_pos),distance(res_o_m1_O_pos, current_res_O_pos),
 			distance(res[o+1].N.pos, current_res_O_pos),distance(res_o_p1_O_pos, current_res_O_pos),
-			distance(res_o_p2_N_pos, current_res_O_pos),atom_pattern_dist))
-		if args.flush: Ofile.flush()
+			distance(res_o_p2_N_pos, current_res_O_pos)] + atom_pattern_dist
+		
+		ret[i] = (nvals,ovals)
+		
+	return ret	
 
+if __name__ == '__main__':
+	start_time = time.time()
+	
+	# User-friendly argument handling
+	parser = argparse.ArgumentParser()
+	parser.add_argument("topology_filename",   help="input file with (.prmtop) extension")
+	parser.add_argument("trajectory_filename", help="input file with (.dcd) extension")
+	parser.add_argument("-r","--residues", help="space deliminated residues to compute (all if unspecified)",nargs='*')
+	parser.add_argument("--start",help="frame to start on",type=int,default=0)
+	parser.add_argument("--end",help="frame to end at",type=int,default=-1)
+	parser.add_argument("--flush",help="flush I/O as it is written",action='store_true')
+	parser.add_argument("--outputdir",help="directory in which to put DUMP files",default="output")
+	args = parser.parse_args()
+	
+	# Set up universe, selections and data structures
+	u = MDAnalysis.Universe(args.topology_filename, args.trajectory_filename)
+	prot = u.select_atoms("protein")
+	notH = u.select_atoms("not (name H*)")
+	bb_atoms = ["N", "O"]
+	res = prot.atoms.residues
+	
+	#identify residues of interest
+	startch = 0
+	residues = []
+	
+	#store N and C terminals
+	isNT = set()
+	isCT = set()
 
-print "Program time: {0:.3f} seconds.".format(time.time() - start_time)
+	for (i,r) in enumerate(res):
+		if i == startch:
+			addindex(isNT, r, 'N')
+		if i >= startch+2:
+			if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
+				addindex(isCT, r, 'OXT')
+				addindex(isCT, r, 'OT1')
+				addindex(isCT, r, 'OT2')
+				addindex(isCT, r, 'O')
+				
+				startch = i+1 #update start of chain			
+			elif r.name != 'PRO':
+				residues.append(r)
+	
+	if args.residues:
+		residues = [] #override with user specified
+		for r in args.residues:
+			residues.append(res[int(r)-1])
+	######################################################################################################################
+	## Main code - opens all files, iterates through each timestep once while iterating through residues.               ##
+	######################################################################################################################
+	
+	# Holds all open files
+	open_O_files = []
+	open_N_files = []
+	
+	if not os.path.exists(args.outputdir):
+		os.makedirs(args.outputdir)
+	
+	# Open all files at the beginning
+	for r in residues:
+		i = r.id
+		file_name_O = '%s/%s.O.%d' % (args.outputdir,r.name,i)
+		file_name_N = '%s/%s.N.%d' % (args.outputdir,r.name,i)
+		
+		f_O = open(file_name_O,'w')
+		f_N = open(file_name_N,'w')
+		
+		open_O_files.append(f_O)
+		open_N_files.append(f_N)
+	
+	end = args.end
+	if end < 0: end = u.trajectory.n_frames
+	
+	# Iterate through each desired frame
+	resandfiles = zip(residues, open_N_files, open_O_files)
+	for ts in u.trajectory[args.start:end]:
+		
+		print "Processing frame #: " + str(ts.frame)
+		resdata = process_frame(u, residues)
+		for r, Nfile, Ofile in resandfiles:
+			i = r.id-1;
+			assert res[i] == r
+			assert i in resdata
+			(ndata,odata) = resdata[i]
+			# Write the output to the open file
+			Nfile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}".format(*ndata[0:7]))
+			for x in ndata[7:]:
+				Nfile.write('|{0:.3f}'.format(x))
+			Nfile.write('\n')
+			if args.flush: Nfile.flush()
+				
+			# Write the output to the open file
+			Ofile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}".format(*odata[0:7]))
+			for x in odata[7:]:
+				Ofile.write('|{0:.3f}'.format(x))
+			Ofile.write('\n')
+			if args.flush: Ofile.flush()
+
+	
+	print "Program time: {0:.3f} seconds.".format(time.time() - start_time)
