@@ -81,6 +81,9 @@ atom_ranking = {
 	"B": 8, "G": 9, "P":10, "M": 11, "Z": 12, "U": 13, "C": 14
 }
 
+#the following are global sets
+isNT = None 
+isCT = None
 def atom_to_pattern(atom):
 	#treat N-term and C-term specially
 	if atom.index in isNT:
@@ -278,7 +281,7 @@ def process_frame(u, residues, prot, notH):
 						distance(res_i_p1_N_pos, apos)]
 
 		# Write the output to the open file
-		nvals = [atom_pattern_N,ts.frame,
+		nvals = [atom_pattern_N,u.trajectory.frame,
 				distance(res_i_m1_N_pos, current_res_H_pos),distance(res_i_m2_O_pos, current_res_H_pos),
 				distance(res[i-1].O.pos, current_res_H_pos),distance(res_i_O_pos, current_res_H_pos),
 				distance(res[i+1].N.pos, current_res_H_pos)] + atom_pattern_dist
@@ -350,7 +353,7 @@ def process_frame(u, residues, prot, notH):
 						distance(res_o_p2_N_pos, apos)]
 		
 		# Write the output to the open file
-		ovals = [atom_pattern_O,ts.frame,
+		ovals = [atom_pattern_O,u.trajectory.frame,
 			distance(res_o_N_pos, current_res_O_pos),distance(res_o_m1_O_pos, current_res_O_pos),
 			distance(res[o+1].N.pos, current_res_O_pos),distance(res_o_p1_O_pos, current_res_O_pos),
 			distance(res_o_p2_N_pos, current_res_O_pos)] + atom_pattern_dist
@@ -359,6 +362,33 @@ def process_frame(u, residues, prot, notH):
 		
 	return ret	
 
+
+def process_residues(prot):
+	'''process residues of an mdanalysis protein selection.
+	This must be called to initialize stage before processing frame.
+	TODO: refactor into class object to eliminate global(!) state'''
+	global isNT
+	global isCT
+	isNT = set()
+	isCT = set()
+	startch = 0
+	res = prot.atoms.residues
+	residues = []
+	for (i,r) in enumerate(res):
+		if i == startch:
+			addindex(isNT, r, 'N')
+		if i >= startch+2:
+			if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
+				addindex(isCT, r, 'OXT')
+				addindex(isCT, r, 'OT1')
+				addindex(isCT, r, 'OT2')
+				addindex(isCT, r, 'O')
+				
+				startch = i+1 #update start of chain			
+			elif r.name != 'PRO':
+				residues.append(r)
+	return residues
+		
 if __name__ == '__main__':
 	start_time = time.time()
 	
@@ -384,24 +414,7 @@ if __name__ == '__main__':
 	startch = 0
 	residues = []
 	
-	#store N and C terminals
-	isNT = set()
-	isCT = set()
-
-	for (i,r) in enumerate(res):
-		if i == startch:
-			addindex(isNT, r, 'N')
-		if i >= startch+2:
-			if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
-				addindex(isCT, r, 'OXT')
-				addindex(isCT, r, 'OT1')
-				addindex(isCT, r, 'OT2')
-				addindex(isCT, r, 'O')
-				
-				startch = i+1 #update start of chain			
-			elif r.name != 'PRO':
-				residues.append(r)
-	
+	residues = process_residues(prot)	
 	if args.residues:
 		residues = [] #override with user specified
 		for r in args.residues:
@@ -433,7 +446,6 @@ if __name__ == '__main__':
 	if end < 0: end = u.trajectory.n_frames
 	
 	# Iterate through each desired frame
-	resandfiles = zip(residues, open_N_files, open_O_files)
 	prot = u.select_atoms("protein")
 	notH = u.select_atoms("not (name H*)")
 	
@@ -441,22 +453,23 @@ if __name__ == '__main__':
 		
 		print "Processing frame #: " + str(ts.frame)
 		resdata = process_frame(u, residues, prot, notH)
-		for r, Nfile, Ofile in resandfiles:
+
+		for r, Nfile, Ofile in zip(residues, open_N_files, open_O_files):
 			i = r.id-1;
 			assert res[i] == r
 			assert i in resdata
 			(ndata,odata) = resdata[i]
 			# Write the output to the open file
-			Nfile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}".format(*ndata[0:7]))
+			Nfile.write("{0}|{1}|{2:.5f}|{3:.5f}|{4:.5f}|{5:.5f}|{6:.5f}".format(*ndata[0:7]))
 			for x in ndata[7:]:
-				Nfile.write('|{0:.3f}'.format(x))
+				Nfile.write('|{0:.5f}'.format(x))
 			Nfile.write('\n')
 			if args.flush: Nfile.flush()
 				
 			# Write the output to the open file
-			Ofile.write("{0}|{1}|{2:.3f}|{3:.3f}|{4:.3f}|{5:.3f}|{6:.3f}".format(*odata[0:7]))
+			Ofile.write("{0}|{1}|{2:.5f}|{3:.5f}|{4:.5f}|{5:.5f}|{6:.5f}".format(*odata[0:7]))
 			for x in odata[7:]:
-				Ofile.write('|{0:.3f}'.format(x))
+				Ofile.write('|{0:.5f}'.format(x))
 			Ofile.write('\n')
 			if args.flush: Ofile.flush()
 

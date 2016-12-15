@@ -37,7 +37,6 @@ def compute_shifts(resdb,ndata,odata,args,verbose=False):
     ret = []
     refs = np.array([args.Nref,args.Href,args.Cref])
     for i in sorted(ndata.keys()):
-        
         #N shifts
         (pattern,values) = ndata[i]                
         if pattern in resdb['N']:
@@ -58,7 +57,7 @@ def compute_shifts(resdb,ndata,odata,args,verbose=False):
                 continue #skip
         else:
             if verbose:
-                sys.stderr.write("Missing pattern %s at resid %d\n" % (pattern,i))
+                sys.stderr.write("Missing pattern %s at frame %d\n" % (pattern,i))
             continue #skip O
                          
         #O shifts
