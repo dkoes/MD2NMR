@@ -78,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--out',help='output file (default stdout)',type=argparse.FileType('w'),default=sys.stdout)
     parser.add_argument('--resmap',help='file containing mapping from resid to resname',default='')
     parser.add_argument('-v','--verbose',help='output informative messages',action='store_true')
-    parser.add_argument('--cpus',help='number of cores to use',default=multiprocessing.cpu_count())
+    parser.add_argument('--cpus',help='number of cores to use',type=int,default=multiprocessing.cpu_count())
     shiftres.add_shift_args(parser)
     args = parser.parse_args()
     
