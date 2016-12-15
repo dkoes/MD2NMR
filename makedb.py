@@ -29,7 +29,7 @@ def make(tridir,keepoutliers=False):
     nmean = np.mean(ntotal,axis=0)
     nstd = np.std(ntotal,axis=0)
     omean = np.mean(ototal,axis=0)
-    ostd = np.mean(ototal,axis=0)
+    ostd = np.std(ototal,axis=0)
                 
     db['defaultO'] = omean
     for tri in glob.glob(tridir+'/*.tri'):
@@ -62,8 +62,14 @@ def make(tridir,keepoutliers=False):
                     newvals = []
 
                     for (nhc,v) in zip(shifts,vals):
+                        if atom == 'N':
+                            mean = nmean
+                            std = nstd
+                        else:
+                            mean = omean
+                            std = ostd
                         for i in xrange(3):
-                            if nhc[i] < nmean[i]-nstd[i]*3 or nhc[i] > nmean[i]+nstd[i]*3:
+                            if nhc[i] < mean[i]-std[i]*3 or nhc[i] > mean[i]+std[i]*3:
                                 break
                         else: #executed if we _didn't_ break out of the leep 
                             newvals.append(v)

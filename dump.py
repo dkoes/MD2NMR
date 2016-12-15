@@ -13,6 +13,7 @@ import argparse
 from os.path import splitext
 from MDAnalysis.analysis.rms import *
 from MDAnalysis.analysis.distances import *
+import gzip
 from scipy import spatial
 
 
@@ -433,11 +434,11 @@ if __name__ == '__main__':
 	# Open all files at the beginning
 	for r in residues:
 		i = r.id
-		file_name_O = '%s/%s.O.%d' % (args.outputdir,r.name,i)
-		file_name_N = '%s/%s.N.%d' % (args.outputdir,r.name,i)
+		file_name_O = '%s/%s.O.%d.gz' % (args.outputdir,r.name,i)
+		file_name_N = '%s/%s.N.%d.gz' % (args.outputdir,r.name,i)
 		
-		f_O = open(file_name_O,'w')
-		f_N = open(file_name_N,'w')
+		f_O = gzip.open(file_name_O,'w')
+		f_N = gzip.open(file_name_N,'w')
 		
 		open_O_files.append(f_O)
 		open_N_files.append(f_N)

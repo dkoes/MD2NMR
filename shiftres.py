@@ -36,12 +36,13 @@ def compute_shifts(resdb,ndata,odata,args,verbose=False):
     # database is indexed by atom->pattern which returns (tree,shifts)
     ret = []
     refs = np.array([args.Nref,args.Href,args.Cref])
+
     for i in sorted(ndata.keys()):
         #N shifts
         (pattern,values) = ndata[i]                
         if pattern in resdb['N']:
             (tree,shifts) = resdb['N'][pattern]
-            (dists,indices) = tree.query(values,k=args.num_matches,p=1,distance_upper_bound=args.max_match*len(values))
+            (dists,indices) = tree.query(values,k=args.Nnum_matches,p=1,distance_upper_bound=args.Nmax_match*len(values))
             #annoyingly unpackes singletons
             if type(dists) is float:
                 dists = [dists]
@@ -64,8 +65,22 @@ def compute_shifts(resdb,ndata,odata,args,verbose=False):
         (pattern,values) = odata[i]                
         if pattern in resdb['O']:
             (tree,shifts) = resdb['O'][pattern]
-            (disto,index) = tree.query(values,k=1,p=1)
-            (Co,Ho,No) = shifts[index]
+            
+            (dists,indices) = tree.query(values,k=args.Onum_matches,p=1,distance_upper_bound=args.Omax_match*len(values))
+            #annoyingly unpackes singletons
+            if type(dists) is float:
+                dists = [dists]
+                indices = [indices]
+            #this is ridiculous, but query will return values even if there isn't anything
+            dists = filter(lambda x: np.isfinite(x), dists)
+            indices = filter(lambda i: i < len(shifts), indices)
+            
+            if dists:
+                disto = np.mean(dists)/len(values)
+                (Co,Ho,No) = np.mean(shifts.reshape(-1,3)[indices,:],axis=0)
+            else:
+                (Co,Ho,No) = resdb['defaultO'] # use default
+                disto = -1.0          
         else:
             (Co,Ho,No) = resdb['defaultO']
             disto = -1.0
@@ -85,8 +100,10 @@ def add_shift_args(parser):
     parser.add_argument('--Nref',help='N reference value',default=229.853)
     parser.add_argument('--Href',help='H reference value',default=31.792)
     parser.add_argument('--Cref',help='C reference value',default=178.947)
-    parser.add_argument('--max-match',help='Maximum value of a match',type=float,default=float('inf'))
-    parser.add_argument('--num-matches',help='Maximum number of templates to match',type=int,default=1)
+    parser.add_argument('--Nmax-match',help='Maximum value of a match for N',type=float,default=float('inf'))
+    parser.add_argument('--Nnum-matches',help='Maximum number of templates to match for N',type=int,default=1)
+    parser.add_argument('--Omax-match',help='Maximum value of a match for O (default used for non-matching)',type=float,default=float('inf'))
+    parser.add_argument('--Onum-matches',help='Maximum number of templates to match for O (default used for not-matching)',type=int,default=1)    
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
