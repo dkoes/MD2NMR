@@ -64,7 +64,7 @@ optional arguments:
 
 ## Advanced usage
 
-If you plan to perform multiple analyses or computing shifts directly from the trajectory is too cpu/memory intensive, you can calculate the intermediate distance representation of the trajectory using `dumpypy`.
+If you plan to perform multiple analyses or computing shifts directly from the trajectory is too cpu/memory intensive, you can calculate the intermediate distance representation of the trajectory using `dump.py`.
 
 ```
 $ dump.py --help
