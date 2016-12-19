@@ -98,4 +98,6 @@ if __name__ == '__main__':
     db['HIS'] = db['HSE']
     db['HIE'] = db['HSE']
     db['HSD'] = db['HSE']
+    #cysteine variants
+    db['CYX'] = db['CYS']
     cPickle.dump(db,out,cPickle.HIGHEST_PROTOCOL)
