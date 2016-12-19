@@ -94,4 +94,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     out = open(args.output,'w')
     db = make(args.tridir,args.disable_filter)
+    #histidine variants
+    db['HIS'] = db['HSE']
+    db['HIE'] = db['HSE']
+    db['HSD'] = db['HSE']
     cPickle.dump(db,out,cPickle.HIGHEST_PROTOCOL)
