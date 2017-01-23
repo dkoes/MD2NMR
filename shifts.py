@@ -32,6 +32,12 @@ def doframes(framerange):
     notH = u.select_atoms("not (name H*)")
     residues = dump.process_residues(prot)    
 
+    if args.residues:
+        res = prot.atoms.residues
+        residues = [] #override with user specified
+        for r in args.residues:
+            residues.append(res[int(r)-1])
+                
     ret = []
     for _ in u.trajectory[start:end]:
         ret.append(dump.process_frame(u, residues, prot, notH))
