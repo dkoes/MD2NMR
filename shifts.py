@@ -111,6 +111,7 @@ if __name__ == '__main__':
             resname = None
             i = int(m.group(2))
             if m.group(1) == 'UMP': # a DUMP file
+                continue
                 if i in resmap:
                     resname = resmap[i]
             else:

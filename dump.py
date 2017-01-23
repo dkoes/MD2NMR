@@ -198,7 +198,6 @@ def process_frame(u, residues, prot, notH):
 	
 	bb_atoms = ["N", "O"]
 	res = prot.atoms.residues
-	
 	# Load this frame into a spatial cKDTree for fast nearest-neighbor search
 	tree = spatial.cKDTree(np.array([x.pos for x in notH.atoms]))
 	
