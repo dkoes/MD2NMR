@@ -142,6 +142,7 @@ if __name__ == '__main__':
         u = MDAnalysis.Universe(args.topo, args.traj)
         prot = u.select_atoms("protein")
         notH = u.select_atoms("not (name H*)")
+        res = prot.atoms.residues
         residues = dump.process_residues(prot)
         if args.residues:
             residues = [] #override with user specified
