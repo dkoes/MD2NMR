@@ -81,6 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--resmap',help='file containing mapping from resid to resname',default='')
     parser.add_argument('-v','--verbose',help='output informative messages',action='store_true')
     parser.add_argument('--cpus',help='number of cores to use',type=int,default=multiprocessing.cpu_count())
+	parser.add_argument("-r","--residues", help="space deliminated residues to compute (all if unspecified)",nargs='*')    
     shiftres.add_shift_args(parser)
     args = parser.parse_args()
     
@@ -141,7 +142,10 @@ if __name__ == '__main__':
         prot = u.select_atoms("protein")
         notH = u.select_atoms("not (name H*)")
         residues = dump.process_residues(prot)
-
+        if args.residues:
+            residues = [] #override with user specified
+            for r in args.residues:
+                residues.append(res[int(r)-1])
         pool = Pool(args.cpus)
 
         #parallelize over frames
