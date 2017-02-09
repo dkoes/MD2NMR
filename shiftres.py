@@ -4,7 +4,7 @@
 
 import numpy as np
 import re, gzip
-import argparse, cPickle
+import argparse, cPickle, gzip
 import sys, os
 import makedb
 
@@ -28,6 +28,8 @@ def read_db(dbname):
     '''Read database and return, or create if dbname is directory'''
     if os.path.isdir(dbname):
         return makedb.make(dbname)
+    elif dbname.endswith('.gz'):
+        return cPickle.load(gzip.open(dbname))
     else:
         return cPickle.load(open(dbname))
 
