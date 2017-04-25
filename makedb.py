@@ -7,14 +7,13 @@ import glob, re, collections
 import argparse, cPickle
 from scipy import spatial
 
-def make(tridir,keepoutliers=False,dynamicfilter=False):
+def make(tridir,keepoutliers=False,dynamicfilter=True):
     '''Create an optimized python database for looking up calculated chemical shifts by pattern'''
     db = dict()
     
     #scan through all files to compute overall mean - this could be more efficient
     ntotal = []
     ototal = []
-    alltotal = []
     for tri in glob.glob(tridir+'/*.tri'):
         m = re.search(r'%s/*(.*)\.([NO])\.tri'%tridir.rstrip('/'),tri)
         if m:
@@ -22,7 +21,6 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
             for line in open(tri):
                 vals = line.split('|')
                 nhc = np.array(vals[1:4],np.float)
-                alltotal.append(nhc)
                 if atom == 'N':
                     ntotal.append(nhc)
                 elif atom == 'O':
@@ -32,8 +30,6 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
     nstd = np.std(ntotal,axis=0)
     omean = np.mean(ototal,axis=0)
     ostd = np.std(ototal,axis=0)
-    allmean = np.mean(alltotal, axis=0)
-    allstd = np.std(alltotal, axis=0)
                 
     db['defaultO'] = omean
     for tri in glob.glob(tridir+'/*.tri'):
@@ -61,7 +57,7 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
             #convert data for each pattern into a kdtree and the corresponding shifts
             for (pattern,vals) in valuesbypattern.iteritems():    
                 shifts = shiftsbypattern[pattern]         
-                if not keepoutliers:
+                if atom == 'N' and not keepoutliers:
                     if dynamicfilter:
                         newshifts = []
                         newvals = []
@@ -114,10 +110,10 @@ if __name__ == '__main__':
     parser.add_argument('-d',"--tridir",help="directory containing .tri files",required=True)
     parser.add_argument('-o',"--output",help="database output file",default="nmr.db")
     parser.add_argument('--disable-filter',help='do not remove outliers (3 sigma)',action='store_true')
-    parser.add_argument('--dynamic-filter',help='compute per-residue std and mean for filter, rather than using predefined constants',action='store_true')
+    parser.add_argument('--static-filter',help='use predefined constants for filter',action='store_true')
     args = parser.parse_args()
     out = open(args.output,'w')
-    db = make(args.tridir,args.disable_filter,args.dynamic_filter)
+    db = make(args.tridir,args.disable_filter,not args.static_filter)
     #histidine variants
     db['HIS'] = db['HSE']
     db['HIE'] = db['HSE']
