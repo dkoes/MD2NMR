@@ -14,6 +14,7 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
     #scan through all files to compute overall mean - this could be more efficient
     ntotal = []
     ototal = []
+    alltotal = []
     for tri in glob.glob(tridir+'/*.tri'):
         m = re.search(r'%s/*(.*)\.([NO])\.tri'%tridir.rstrip('/'),tri)
         if m:
@@ -21,6 +22,7 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
             for line in open(tri):
                 vals = line.split('|')
                 nhc = np.array(vals[1:4],np.float)
+                alltotal.append(nhc)
                 if atom == 'N':
                     ntotal.append(nhc)
                 elif atom == 'O':
@@ -30,6 +32,8 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
     nstd = np.std(ntotal,axis=0)
     omean = np.mean(ototal,axis=0)
     ostd = np.std(ototal,axis=0)
+    allmean = np.mean(alltotal, axis=0)
+    allstd = np.std(alltotal, axis=0)
                 
     db['defaultO'] = omean
     for tri in glob.glob(tridir+'/*.tri'):
@@ -77,14 +81,14 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
                                 newshifts.append(nhc)
                         vals = newvals
                         shifts = newshifts
-                    else: #not dynamic
-                        NMIN = 77.638;
-                        NMAX = 157.638;
-                        HMIN = 20.29;
-                        HMAX = 30.29;
-                        CMIN = 102.682;
-                        CMAX = 142.682;                        
-
+                    else: #not dynamic                       
+                        NMIN = 77.068
+                        NMAX = 160.337
+                        HMIN = 19.566
+                        HMAX = 31.142
+                        CMIN = 102.217
+                        CMAX = 146.892
+      
                         newshifts = []
                         newvals = []                        
                         for (nhc,v) in zip(shifts,vals):
