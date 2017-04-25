@@ -78,12 +78,13 @@ def make(tridir,keepoutliers=False,dynamicfilter=False):
                         vals = newvals
                         shifts = newshifts
                     else: #not dynamic
-                        NMIN   = -10.936
-                        NMAX   = 7.559
-                        HMIN   = -2.966
-                        HMAX   = 0.195
-                        CMIN   = -3.159
-                        CMAX   = 5.5350
+                        NMIN = 77.638;
+                        NMAX = 157.638;
+                        HMIN = 20.29;
+                        HMAX = 30.29;
+                        CMIN = 102.682;
+                        CMAX = 142.682;                        
+
                         newshifts = []
                         newvals = []                        
                         for (nhc,v) in zip(shifts,vals):
