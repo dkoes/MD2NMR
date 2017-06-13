@@ -7,7 +7,7 @@ import glob, re, collections
 import argparse, cPickle
 from scipy import spatial
 
-def make(tridir,keepoutliers=False):
+def make(tridir,keepoutliers=False,dynamicfilter=True):
     '''Create an optimized python database for looking up calculated chemical shifts by pattern'''
     db = dict()
     
@@ -57,25 +57,44 @@ def make(tridir,keepoutliers=False):
             #convert data for each pattern into a kdtree and the corresponding shifts
             for (pattern,vals) in valuesbypattern.iteritems():    
                 shifts = shiftsbypattern[pattern]         
-                if not keepoutliers:
-                    newshifts = []
-                    newvals = []
+                if atom == 'N' and not keepoutliers:
+                    if dynamicfilter:
+                        newshifts = []
+                        newvals = []
 
-                    for (nhc,v) in zip(shifts,vals):
-                        if atom == 'N':
-                            mean = nmean
-                            std = nstd
-                        else:
-                            mean = omean
-                            std = ostd
-                        for i in xrange(3):
-                            if nhc[i] < mean[i]-std[i]*3 or nhc[i] > mean[i]+std[i]*3:
-                                break
-                        else: #executed if we _didn't_ break out of the leep 
-                            newvals.append(v)
-                            newshifts.append(nhc)
-                    vals = newvals
-                    shifts = newshifts
+                        for (nhc,v) in zip(shifts,vals):
+                            if atom == 'N':
+                                mean = nmean
+                                std = nstd
+                            else:
+                                mean = omean
+                                std = ostd
+                            for i in xrange(3):
+                                if nhc[i] < mean[i]-std[i]*3 or nhc[i] > mean[i]+std[i]*3:
+                                    break
+                            else: #executed if we _didn't_ break out of the leep 
+                                newvals.append(v)
+                                newshifts.append(nhc)
+                        vals = newvals
+                        shifts = newshifts
+                    else: #not dynamic                       
+                        NMIN = 77.068
+                        NMAX = 160.337
+                        HMIN = 19.566
+                        HMAX = 31.142
+                        CMIN = 102.217
+                        CMAX = 146.892
+      
+                        newshifts = []
+                        newvals = []                        
+                        for (nhc,v) in zip(shifts,vals):
+                            if nhc[0] >= NMIN and nhc[0] <= NMAX and \
+                               nhc[1] >= HMIN and nhc[1] <= HMAX and \
+                               nhc[2] >= CMIN and nhc[2] <= CMAX:
+                                newvals.append(v)
+                                newshifts.append(nhc)
+                        vals = newvals
+                        shifts = newshifts
                 
                 if len(vals):
                     tree = spatial.cKDTree(np.array(vals),copy_data=True)
@@ -88,12 +107,13 @@ def make(tridir,keepoutliers=False):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d',"--tridir",help="directory containing .tri files")
+    parser.add_argument('-d',"--tridir",help="directory containing .tri files",required=True)
     parser.add_argument('-o',"--output",help="database output file",default="nmr.db")
     parser.add_argument('--disable-filter',help='do not remove outliers (3 sigma)',action='store_true')
+    parser.add_argument('--static-filter',help='use predefined constants for filter',action='store_true')
     args = parser.parse_args()
     out = open(args.output,'w')
-    db = make(args.tridir,args.disable_filter)
+    db = make(args.tridir,args.disable_filter,not args.static_filter)
     #histidine variants
     db['HIS'] = db['HSE']
     db['HIE'] = db['HSE']
