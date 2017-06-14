@@ -59,9 +59,9 @@ o = args.out
 o.write('#ID\tName\tN\tH\tC\tNstd\tHstd\tCstd\tCoverage\n')
 for resi in sorted(resmap.keys()):
     if data['N'][resi]: #e.g. PRO doesn't have values
-        print '%d\t%s\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t0.0'%(resi,resmap[resi],
+        o.write('%d\t%s\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t0.0\n'%(resi,resmap[resi],
             np.mean(data['N'][resi]),np.mean(data['H'][resi]),np.mean(data['C'][resi]),
-            np.std(data['N'][resi]),np.std(data['H'][resi]),np.std(data['C'][resi]))
+            np.std(data['N'][resi]),np.std(data['H'][resi]),np.std(data['C'][resi])))
         
         
 shutil.rmtree(tmpdir)
