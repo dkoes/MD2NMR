@@ -394,8 +394,8 @@ if __name__ == '__main__':
 	
 	# User-friendly argument handling
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--topo",   help="input file with (.prmtop) extension")
-	parser.add_argument("--traj", help="input file with (.dcd) extension")
+	parser.add_argument("--topo", required=True,  help="input file with (.prmtop) extension")
+	parser.add_argument("--traj", required=True, help="input file with (.dcd) extension")
 	parser.add_argument("-r","--residues", help="space deliminated residues to compute (all if unspecified)",nargs='*')
 	parser.add_argument("--start",help="frame to start on",type=int,default=0)
 	parser.add_argument("--end",help="frame to end at",type=int,default=-1)
