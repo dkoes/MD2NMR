@@ -43,7 +43,7 @@ subprocess.call(cmd,shell=True)
 
 # read and collate shiftx output
 
-data = {'H': defaultdict(list), 'N': defaultdict(list), 'C': defaultdict(list)}
+data = {'H': defaultdict(list), 'N': defaultdict(list), 'CA': defaultdict(list)}
 resmap = {}
 for fname in glob.glob('%s/*.sxp'%tmpdir):
     f = open(fname)
@@ -60,8 +60,8 @@ o.write('#ID\tName\tN\tH\tC\tNstd\tHstd\tCstd\tCoverage\n')
 for resi in sorted(resmap.keys()):
     if data['N'][resi]: #e.g. PRO doesn't have values
         print '%d\t%s\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t0.0'%(resi,resmap[resi],
-            np.mean(data['N'][resi]),np.mean(data['H'][resi]),np.mean(data['C'][resi]),
-            np.std(data['N'][resi]),np.std(data['H'][resi]),np.std(data['C'][resi]))
+            np.mean(data['N'][resi]),np.mean(data['H'][resi]),np.mean(data['CA'][resi]),
+            np.std(data['N'][resi]),np.std(data['H'][resi]),np.std(data['CA'][resi]))
         
         
 shutil.rmtree(tmpdir)
