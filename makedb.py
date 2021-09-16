@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''Create python database from tri files'''
 
 import numpy as np
 import glob, re, collections
-import argparse, cPickle
+import argparse, pickle
 from scipy import spatial
 
 def make(tridir,keepoutliers=False,dynamicfilter=True):
@@ -55,7 +55,7 @@ def make(tridir,keepoutliers=False,dynamicfilter=True):
                 allres.append(np.array([N,H,C]))           
                     
             #convert data for each pattern into a kdtree and the corresponding shifts
-            for (pattern,vals) in valuesbypattern.iteritems():    
+            for (pattern,vals) in valuesbypattern.items():    
                 shifts = shiftsbypattern[pattern]         
                 if atom == 'N' and not keepoutliers:
                     if dynamicfilter:
@@ -69,7 +69,7 @@ def make(tridir,keepoutliers=False,dynamicfilter=True):
                             else:
                                 mean = omean
                                 std = ostd
-                            for i in xrange(3):
+                            for i in range(3):
                                 if nhc[i] < mean[i]-std[i]*3 or nhc[i] > mean[i]+std[i]*3:
                                     break
                             else: #executed if we _didn't_ break out of the leep 
@@ -97,8 +97,7 @@ def make(tridir,keepoutliers=False,dynamicfilter=True):
                         shifts = newshifts
                 
                 if len(vals):
-                    tree = spatial.cKDTree(np.array(vals),copy_data=True)
-                    db[res][atom][pattern] = (tree,np.array(shifts))
+                    db[res][atom][pattern] = (vals,np.array(shifts))
             if atom == 'O':
                 db[res]['defaultO'] = np.mean(allres,axis=0)
                 
@@ -120,4 +119,4 @@ if __name__ == '__main__':
     db['HSD'] = db['HSE']
     #cysteine variants
     db['CYX'] = db['CYS']
-    cPickle.dump(db,out,cPickle.HIGHEST_PROTOCOL)
+    pickle.dump(db,out,pickle.HIGHEST_PROTOCOL)

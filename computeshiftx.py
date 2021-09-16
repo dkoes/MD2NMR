@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''Run shiftx on a trajectory/topology and output in the same .shift
    format that we use.'''

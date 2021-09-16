@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''Calculate chemical shifts of a directory of residue traces'''
 
@@ -10,6 +10,8 @@ import shiftres, dump
 import multiprocessing
 import MDAnalysis
 from multiprocessing import Pool
+import cProfile, io, pstats
+from pstats import SortKey
 
 
 def shifts_from_file(db,fname,resid,resname,args):
@@ -46,7 +48,7 @@ def doframes(framerange):
     
 def doshifts(rinfo):
     (r,rname) = rinfo
-    return shifts_from_dicts(db, resdata, r, rname, args)
+    return shifts_from_dicts(db, resdata, r, rname, args)  
             
 def shifts_from_dicts(db,resd,r, resname,args):
     '''return summary statistics for residue r from a list of dump dicts'''
@@ -136,7 +138,7 @@ if __name__ == '__main__':
             for n, l in enumerate(open(fname),1): pass
         
         #sort by resid
-        inputs.sort(key=lambda (fname,i,resname):i)    
+        inputs.sort(key=lambda fname_i_resname:fname_i_resname[1])    
         
         #setup pool
         pool = Pool(args.cpus)
@@ -159,7 +161,7 @@ if __name__ == '__main__':
         #parallelize over frames
         n = len(u.trajectory)
         step = int(n / args.cpus)+1
-        franges = [[i,i+step] for i in xrange(0,n,step)]
+        franges = [[i,i+step] for i in range(0,n,step)]
         franges[-1][1]=n
 
         resdata = pool.map(doframes, franges)
@@ -172,7 +174,7 @@ if __name__ == '__main__':
         pool = Pool(args.cpus)
 
         #compute shifts            
-        results = pool.map(doshifts, [(r.id-1,r.name) for r in residues])
+        results = pool.map(doshifts, [(r.resid-1,r.resname) for r in residues])
         
     else:
         sys.stderr("Require --inputdir of dump files or topology/trajectory information\n")
@@ -185,10 +187,10 @@ if __name__ == '__main__':
     for (resid,resname,means,stds,shifts) in results:
         args.out.write('%d\t%s\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n' % (resid,resname,means[0],means[1],means[2],stds[0],stds[1],stds[2],float(len(shifts))/n))
         if args.resdir: #output individual residue data
-            out = gzip.open('%s/%s.%d.shifts.gz' % (args.resdir,resname,resid),'w')
+            out = gzip.open('%s/%s.%d.shifts.gz' % (args.resdir,resname,resid),'wt')
             out.write('#Frame\tN\tH\tC\tNdist\tOdist\n')
             for sh in shifts:
                 out.write('%d\t'%sh[0])
-                out.write('\t'.join(map(lambda x: '%.5f'%x,sh[1:]))+'\n')
+                out.write('\t'.join(['%.5f'%x for x in sh[1:]])+'\n')
             
         

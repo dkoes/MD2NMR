@@ -4,9 +4,10 @@
 
 import numpy as np
 import re, gzip
-import argparse, cPickle, gzip
+import argparse, pickle, gzip
 import sys, os
 import makedb
+import scipy.spatial as spatial
 
 def read_resdump(fname):
     '''Read a dump file and return (pattern,values) indexed by frame'''
@@ -25,17 +26,27 @@ def read_resdump(fname):
     return ret
 
 def read_db(dbname):
-    '''Read database and return, or create if dbname is directory'''
+    '''Read database and return, or create if dbname is directory.
+    Returns database with kdtrees'''
     if os.path.isdir(dbname):
-        return makedb.make(dbname)
+        db = makedb.make(dbname)
     elif dbname.endswith('.gz'):
-        return cPickle.load(gzip.open(dbname))
+        db = pickle.load(gzip.open(dbname,'rb'),encoding='bytes')
     else:
-        return cPickle.load(open(dbname))
-
+        db = pickle.load(open(dbname,'rb'),encoding='bytes')
+        
+    for r in db.keys():
+        if type(db[r]) == dict:
+            for a in db[r].keys():
+                if type(db[r][a]) == dict:
+                    for pat in db[r][a].keys():
+                        (treevals,shifts) = db[r][a][pat]
+                        db[r][a][pat] = (spatial.cKDTree(treevals),shifts)
+    return db
+    
 def compute_shifts(resdb,ndata,odata,args,verbose=False):
     '''Use residue database to find closes match and return frame indexed N,H,C shifts along with distances to match'''
-    # database is indexed by atom->pattern which returns (tree,shifts)
+    # database is indexed by atom->pattern which returns (values,shifts)
     ret = []
     refs = np.array([args.Nref,args.Href,args.Cref])
 
@@ -50,8 +61,8 @@ def compute_shifts(resdb,ndata,odata,args,verbose=False):
                 dists = [dists]
                 indices = [indices]
             #this is ridiculous, but query will return values even if there isn't anything
-            dists = filter(lambda x: np.isfinite(x), dists)
-            indices = filter(lambda i: i < len(shifts), indices)
+            dists = [x for x in dists if np.isfinite(x)]
+            indices = [i for i in indices if i < len(shifts)]
             
             if dists:
                 dist = np.mean(dists)/len(values)
@@ -66,16 +77,15 @@ def compute_shifts(resdb,ndata,odata,args,verbose=False):
         #O shifts
         (pattern,values) = odata[i]                
         if pattern in resdb['O']:
-            (tree,shifts) = resdb['O'][pattern]
-            
+            (tree,shifts) = resdb['O'][pattern]            
             (dists,indices) = tree.query(values,k=args.Onum_matches,p=1,distance_upper_bound=args.Omax_match*len(values))
             #annoyingly unpackes singletons
             if type(dists) is float:
                 dists = [dists]
                 indices = [indices]
             #this is ridiculous, but query will return values even if there isn't anything
-            dists = filter(lambda x: np.isfinite(x), dists)
-            indices = filter(lambda i: i < len(shifts), indices)
+            dists = [x for x in dists if np.isfinite(x)]
+            indices = [i for i in indices if i < len(shifts)]
             
             if dists:
                 disto = np.mean(dists)/len(values)

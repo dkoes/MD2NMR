@@ -2,17 +2,21 @@
 
 This project provides an *ab initio*, template-based approach for directly calculating chemical shifts from molecular dynamics simulations.  The calculated shifts are in no way empirically fit and are meant to represent the actual chemical environment induced in the simulation.  They can be used to compare simulations to experimental data and as indicator values for the local chemical environment of backbone atoms.
 
+### Update (9/16/2021)
+
+The code has been updated to use Python3 and MDAnalysis 2.0.  The Python3 code uses a different database format (`databases/db_2_2017_py3.db.gz`).
+Unfortunately, due to MDAnalysis changes, the code is now approximately 2X slower.  The old Python2 implementation (0.2.0) can be used instead by reverting to MDAnalysis 0.14.0 (e.g. `python2 -m pip install MDAnalysis=0.14.0`).
 
 ## Usage
 
 ```
-$ shifts.py --topo 1enh_10ns_0.prmtop --traj 1enh_10ns_0.dcd  -d ../nmr.db
+$ ./shifts.py --topo example/1enh_10ns_0.prmtop --traj example/small.dcd  -d databases/db_2_2017_py3.db.gz
 #ID	Name	N	H	C	Nstd	Hstd	Cstd	Coverage
-3	ARG	114.219	6.916	53.369	10.642	1.058	4.698	1.000
-4	THR	110.062	6.463	59.614	12.136	1.083	5.120	0.999
-5	ALA	121.457	6.503	52.190	9.067	0.948	4.606	1.000
-6	PHE	117.500	6.479	55.289	8.599	1.085	5.014	0.999
-7	SER	113.636	7.643	55.922	8.497	0.958	4.498	1.000
+3	ARG	114.903	6.960	53.272	10.982	1.059	5.197	1.000
+4	THR	112.799	6.824	60.177	13.145	1.230	5.310	1.000
+5	ALA	120.528	6.752	51.084	8.670	1.007	4.975	1.000
+6	PHE	117.034	6.515	55.837	9.036	1.009	5.482	1.000
+7	SER	112.478	7.459	57.736	9.023	1.129	4.316	1.000
 ...
 ```
 

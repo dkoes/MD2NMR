@@ -8,7 +8,7 @@ for i in range(0, len(new_filenames)):
 	new =  [line.rstrip('\n') for line in open(os.getcwd() + '/output/' + new_filenames[i])]
 	
 	if len(orig) != len(new):
-		print new_filenames[i] + " wrong number of lines: %d vs %d" % (len(orig),len(new))
+		print(new_filenames[i] + " wrong number of lines: %d vs %d" % (len(orig),len(new)))
 		continue
 
 	for j in range(1, len(orig)):
@@ -37,14 +37,14 @@ for i in range(0, len(new_filenames)):
 			for d in range(0, len(new_dists)):
 				# Pattern matched, but conflicting distances
 				if abs(float(orig_dists[d]) - float(new_dists[d])) > 0.02:
-					print new_filenames[i] + " Frame #: " + orig_frame_num + " wrong distance, nmrdump: " + orig_dists[d] + " new: " + new_dists[d] + " " + str(new_atom_pattern)
+					print(new_filenames[i] + " Frame #: " + orig_frame_num + " wrong distance, nmrdump: " + orig_dists[d] + " new: " + new_dists[d] + " " + str(new_atom_pattern))
 		else:
-			print new_filenames[i] + " Frame #: " + orig_frame_num + " wrong atom pattern, nmrdump: " + str(orig_atom_pattern) + " new: " + str(new_atom_pattern)
-			print "Orig",
+			print(new_filenames[i] + " Frame #: " + orig_frame_num + " wrong atom pattern, nmrdump: " + str(orig_atom_pattern) + " new: " + str(new_atom_pattern))
+			print("Orig", end=' ')
 			for d in orig_dists[::5]:
-				print d,
-			print ''
-			print 'New ',
+				print(d, end=' ')
+			print('')
+			print('New ', end=' ')
 			for d in new_dists[::5]:
-				print d,
-			print ''
+				print(d, end=' ')
+			print('')

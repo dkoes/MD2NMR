@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Script that analyzes a molecular dynamics simulation for experimental validation.
 
 import cProfile
 import pstats, os
-import StringIO
+import io
 import sys, MDAnalysis
 import math
 import numpy as np
@@ -18,8 +18,10 @@ from scipy import spatial
 
 
 def addindex(s, r, aname):
-	if aname in r.names:
-		s.add(r[aname].index)
+	if aname in r.atoms.names:
+		i = np.argmax(r.atoms.names == aname)
+		a = r.atoms[i]
+		s.add(a.index)
 
 			
 # Dictionary that maps atom names to groups
@@ -159,7 +161,7 @@ def find_closest_atom(cloud, target_atom):
 
 	# Finds closest oxygen to current residue target atom
 	for atom in oxygens:
-		dist = distance(atom[0].pos, target_atom.pos)
+		dist = distance(atom[0].position, target_atom.position)
 		if dist < minO:
 			minO = dist
 			nearestO = atom
@@ -177,7 +179,7 @@ def find_closest_atom(cloud, target_atom):
 	# Finds closest C to previously found nearestO
 	if len(carbons) > 0:
 		for atom in carbons:
-			dist = distance(atom[0].pos, nearestO[0].pos)
+			dist = distance(atom[0].position, nearestO[0].position)
 			if dist < minC:
 				minC = dist
 				nearestC = atom
@@ -191,7 +193,18 @@ def find_closest_atom(cloud, target_atom):
 	
 	return nearest_atoms
 
-
+def H(r):
+	i = np.argmax(r.atoms.names == 'H')
+	return r.atoms[i]
+	
+def O(r):
+	i = np.argmax(r.atoms.names == 'O')
+	return r.atoms[i]
+		
+def N(r):
+	i = np.argmax(r.atoms.names == 'N')
+	return r.atoms[i]
+	
 def process_frame(u, residues, prot, notH):
 	'''Calculate distance descriptors for all requested residues of the current
 	frame of a molecular dynamics simulation. Provide selections of the protein atoms and all notH atoms'''
@@ -199,12 +212,12 @@ def process_frame(u, residues, prot, notH):
 	bb_atoms = ["N", "O"]
 	res = prot.atoms.residues
 	# Load this frame into a spatial cKDTree for fast nearest-neighbor search
-	tree = spatial.cKDTree(np.array([x.pos for x in notH.atoms]))
+	tree = spatial.cKDTree(np.array([x.position for x in notH.atoms]))
 	
 	ret = dict() #indexed by resid
 	# Simultaneously iterate through each residue and corresponding open file
 	for r in residues:
-		i = r.id-1;
+		i = r.resid-1;
 		assert res[i] == r
 		######################################################
 		##  Process the N dome								
@@ -217,20 +230,20 @@ def process_frame(u, residues, prot, notH):
 		processed_cloud = []
 		atom_pattern_N = ''
 		atom_pattern_dist = []
-		current_res_H_pos = r.H.pos
-		x = r.N.pos - current_res_H_pos
-		res_i_O_pos = res[ i ].O.pos
-		res_i_m1_N_pos = res[i-1].N.pos
-		res_i_p1_N_pos = res[i+1].N.pos
-		res_i_m2_O_pos = res[i-2].O.pos
+		current_res_H_pos = H(r).position
+		x = N(r).position - current_res_H_pos
+		res_i_O_pos = O(res[ i ]).position
+		res_i_m1_N_pos = N(res[i-1]).position
+		res_i_p1_N_pos = N(res[i+1]).position
+		res_i_m2_O_pos = O(res[i-2]).position
 		
 		# First round of processing from enhanced atom selection
 		for j in tree.query_ball_point(current_res_H_pos, 5.0):
 			atom = notH.atoms[j]
-			atom_pos = atom.pos
+			atom_pos = atom.position
 			ref_name = atom_to_pattern(atom) 
 			# Check to ensure backbone atoms within (+/-) 2 residues are not included
-			if atom.name in bb_atoms and abs(r.id - atom.resid) < 3:
+			if atom.name in bb_atoms and abs(r.resid - atom.resid) < 3:
 				continue 
 			else:
 				if ref_name:
@@ -262,7 +275,7 @@ def process_frame(u, residues, prot, notH):
 			atom_pattern_N = "Z:"
 			atom_pattern_dist += [0.0,0.0,0.0,0.0,0.0]
 		else:
-			processed_cloud = find_closest_atom(cloud, res[i].H)
+			processed_cloud = find_closest_atom(cloud, H(res[i]))
 	
 			if processed_cloud == None:
 				atom_pattern_N = "Z:"
@@ -274,7 +287,7 @@ def process_frame(u, residues, prot, notH):
 				# Generate the atom pattern with their corresponding distances
 				for atom in processed_cloud:
 					atom_pattern_N += atom_to_pattern(atom[0]) + ':'
-					apos = atom[0].pos
+					apos = atom[0].position
 					atom_pattern_dist += [
 						distance(current_res_H_pos, apos),distance(res_i_m1_N_pos, apos),
 						distance(res_i_m2_O_pos, apos),distance(res_i_O_pos, apos),
@@ -283,8 +296,8 @@ def process_frame(u, residues, prot, notH):
 		# Write the output to the open file
 		nvals = [atom_pattern_N,u.trajectory.frame,
 				distance(res_i_m1_N_pos, current_res_H_pos),distance(res_i_m2_O_pos, current_res_H_pos),
-				distance(res[i-1].O.pos, current_res_H_pos),distance(res_i_O_pos, current_res_H_pos),
-				distance(res[i+1].N.pos, current_res_H_pos)] + atom_pattern_dist
+				distance(O(res[i-1]).position, current_res_H_pos),distance(res_i_O_pos, current_res_H_pos),
+				distance(N(res[i+1]).position, current_res_H_pos)] + atom_pattern_dist
 		
 		# Intentionally offset the oxygen output	
 		o = i - 1
@@ -299,21 +312,21 @@ def process_frame(u, residues, prot, notH):
 		processed_cloud = []
 		atom_pattern_O = ''
 		atom_pattern_dist = []
-		current_res_O_pos = res[o].O.pos
-		x = res[o+1].N.pos - current_res_O_pos
-		res_o_N_pos = res[ o ].N.pos
-		res_o_m1_O_pos = res[o-1].O.pos
-		res_o_p1_O_pos = res[o+1].O.pos
-		res_o_p2_N_pos = res[o+2].N.pos
+		current_res_O_pos = O(res[o]).position
+		x = N(res[o+1]).position - current_res_O_pos
+		res_o_N_pos = N(res[ o ]).position
+		res_o_m1_O_pos = O(res[o-1]).position
+		res_o_p1_O_pos = O(res[o+1]).position
+		res_o_p2_N_pos = N(res[o+2]).position
 		
 		# First round of processing from enhanced atom selection
 		for j in tree.query_ball_point(current_res_O_pos, 3.9):
 			atom = notH.atoms[j]
-			atom_pos = atom.pos
+			atom_pos = atom.position
 			ref_name = atom_to_pattern(atom)
 
 			# Check to ensure backbone atoms within (+/-) 2 residues are not included
-			if atom.name in bb_atoms and abs(res[o].id - atom.resid) < 3:
+			if atom.name in bb_atoms and abs(res[o].resid - atom.resid) < 3:
 				continue
 			else:
 				if ref_name:
@@ -335,7 +348,7 @@ def process_frame(u, residues, prot, notH):
 			atom_pattern_O = "Z:"
 			atom_pattern_dist += [0.0,0.0,0.0,0.0,0.0]
 		else:
-			processed_cloud = find_closest_atom(cloud, res[o].O)
+			processed_cloud = find_closest_atom(cloud, O(res[o]))
 	
 			if processed_cloud == None or len(processed_cloud) < 1:
 				atom_pattern_O = "Z:"
@@ -347,7 +360,7 @@ def process_frame(u, residues, prot, notH):
 				# Generate the atom pattern with their corresponding distances
 				for atom in processed_cloud:
 					atom_pattern_O += atom_to_pattern(atom[0]) + ":"
-					apos = atom[0].pos
+					apos = atom[0].position
 					atom_pattern_dist += [distance(current_res_O_pos,   apos),distance(res_o_N_pos,   apos),
 						distance(res_o_m1_O_pos, apos),distance(res_o_p1_O_pos, apos),
 						distance(res_o_p2_N_pos, apos)]
@@ -355,7 +368,7 @@ def process_frame(u, residues, prot, notH):
 		# Write the output to the open file
 		ovals = [atom_pattern_O,u.trajectory.frame,
 			distance(res_o_N_pos, current_res_O_pos),distance(res_o_m1_O_pos, current_res_O_pos),
-			distance(res[o+1].N.pos, current_res_O_pos),distance(res_o_p1_O_pos, current_res_O_pos),
+			distance(N(res[o+1]).position, current_res_O_pos),distance(res_o_p1_O_pos, current_res_O_pos),
 			distance(res_o_p2_N_pos, current_res_O_pos)] + atom_pattern_dist
 		
 		ret[i] = (nvals,ovals)
@@ -378,14 +391,14 @@ def process_residues(prot):
 		if i == startch:
 			addindex(isNT, r, 'N')
 		if i >= startch+2:
-			if ('OXT' in r.names or 'OT2' in r.names) and len(residues) > 0: #end of chain
+			if ('OXT' in r.atoms.names or 'OT2' in r.atoms.names) and len(residues) > 0: #end of chain
 				addindex(isCT, r, 'OXT')
 				addindex(isCT, r, 'OT1')
 				addindex(isCT, r, 'OT2')
 				addindex(isCT, r, 'O')
 				
 				startch = i+1 #update start of chain			
-			elif r.name != 'PRO':
+			elif r.resname != 'PRO':
 				residues.append(r)
 	return residues
 		
@@ -451,7 +464,7 @@ if __name__ == '__main__':
 	
 	for ts in u.trajectory[args.start:end]:
 		
-		print "Processing frame #: " + str(ts.frame)
+		print("Processing frame #: " + str(ts.frame))
 		resdata = process_frame(u, residues, prot, notH)
 
 		for r, Nfile, Ofile in zip(residues, open_N_files, open_O_files):
@@ -474,4 +487,4 @@ if __name__ == '__main__':
 			if args.flush: Ofile.flush()
 
 	
-	print "Program time: {0:.3f} seconds.".format(time.time() - start_time)
+	print("Program time: {0:.3f} seconds.".format(time.time() - start_time))
