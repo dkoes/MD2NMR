@@ -445,7 +445,7 @@ if __name__ == '__main__':
 	
 	# Open all files at the beginning
 	for r in residues:
-		i = r.id
+		i = r.resid
 		file_name_O = '%s/%s.O.%d.gz' % (args.outputdir,r.name,i)
 		file_name_N = '%s/%s.N.%d.gz' % (args.outputdir,r.name,i)
 		
@@ -468,7 +468,7 @@ if __name__ == '__main__':
 		resdata = process_frame(u, residues, prot, notH)
 
 		for r, Nfile, Ofile in zip(residues, open_N_files, open_O_files):
-			i = r.id-1;
+			i = r.resid-1;
 			assert res[i] == r
 			assert i in resdata
 			(ndata,odata) = resdata[i]
